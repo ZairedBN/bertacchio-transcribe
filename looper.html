@@ -107,6 +107,10 @@
     border: 1px solid var(--border); border-bottom-width: 2px;
     border-radius: 4px; padding: 0 5px; background: var(--input-bg);
   }
+  input[type=text].link-in { flex: 1; min-width: 200px; width: auto; }
+  .link-msg { color: var(--muted); font-size: 13px; margin-top: 6px; min-height: 0; }
+  .link-msg:empty { display: none; }
+  .link-msg.err { color: var(--playhead); }
   .speed-val { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 52px; text-align: right; }
 </style>
 </head>
@@ -121,6 +125,11 @@
       <input type="file" id="file" accept="audio/*,.mp3">
       <span class="filename" id="filename">Nessun file caricato</span>
     </div>
+    <div class="row">
+      <input type="text" id="linkIn" class="link-in" placeholder="…oppure incolla un link (YouTube, SoundCloud, Bandcamp…)">
+      <button id="linkBtn">Carica link</button>
+    </div>
+    <div class="link-msg" id="linkMsg"></div>
     <div class="row" style="margin-top:14px">
       <div class="wave-wrap" id="waveWrap" style="flex:1">
         <canvas id="wave"></canvas>
@@ -260,6 +269,48 @@
   }
 
   $('file').addEventListener('change', e => loadFile(e.target.files[0]));
+
+  // ---------- caricamento da link (richiede server.ps1) ----------
+  const linkIn = $('linkIn'), linkBtn = $('linkBtn'), linkMsg = $('linkMsg');
+  const served = location.protocol === 'http:' || location.protocol === 'https:';
+  const showLinkMsg = (text, isErr) => {
+    linkMsg.textContent = text;
+    linkMsg.classList.toggle('err', !!isErr);
+  };
+  if (!served) {
+    showLinkMsg('Per usare i link avvia il looper con avvia-looper.bat (la pagina aperta direttamente supporta solo i file).');
+  }
+  async function loadLink() {
+    const url = linkIn.value.trim();
+    if (!url) { linkIn.focus(); return; }
+    if (!served) {
+      showLinkMsg('Per usare i link avvia il looper con avvia-looper.bat.', true);
+      return;
+    }
+    linkBtn.disabled = true;
+    showLinkMsg('Scaricamento in corso… (può richiedere qualche secondo)');
+    try {
+      const r = await fetch('/api/load?url=' + encodeURIComponent(url), { headers: { 'X-Looper': '1' } });
+      let j;
+      try { j = await r.json(); } catch { throw new Error('Risposta non valida dal server (errore ' + r.status + ')'); }
+      if (!r.ok || j.error) throw new Error(j.error || ('Errore ' + r.status));
+      showLinkMsg('Caricamento audio…');
+      const ar = await fetch(j.file);
+      if (!ar.ok) throw new Error('Impossibile leggere il file scaricato');
+      const blob = await ar.blob();
+      await loadFile(new File([blob], j.title || 'audio', { type: blob.type }));
+      showLinkMsg('');
+      linkIn.value = '';
+    } catch (e) {
+      showLinkMsg(e.message === 'Failed to fetch'
+        ? 'Server non raggiungibile: è ancora aperta la finestra di avvia-looper.bat?'
+        : e.message, true);
+    } finally {
+      linkBtn.disabled = false;
+    }
+  }
+  linkBtn.addEventListener('click', loadLink);
+  linkIn.addEventListener('keydown', e => { if (e.key === 'Enter') loadLink(); });
 
   // drag & drop su tutta la pagina
   ['dragenter', 'dragover'].forEach(ev => document.addEventListener(ev, e => {
