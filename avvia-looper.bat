@@ -2,3 +2,8 @@
 title Looper MP3
 cd /d "%~dp0"
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0server.ps1"
+if errorlevel 1 (
+  echo.
+  echo Il looper si e' chiuso con un errore. Leggi il messaggio qui sopra.
+  pause
+)
