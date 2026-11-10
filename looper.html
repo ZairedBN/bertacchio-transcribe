@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Looper MP3</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --panel: #ffffff;
+    --text: #1d2330;
+    --muted: #697386;
+    --border: #dde1e8;
+    --accent: #2f6fed;
+    --accent-text: #ffffff;
+    --wave: #9aa6bb;
+    --wave-active: #2f6fed;
+    --region: rgba(47, 111, 237, 0.16);
+    --handle: #2f6fed;
+    --playhead: #e5484d;
+    --input-bg: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151b;
+      --panel: #1b1f27;
+      --text: #e7eaf0;
+      --muted: #8d97a8;
+      --border: #2c323d;
+      --accent: #5b8cff;
+      --accent-text: #0d1117;
+      --wave: #4a5366;
+      --wave-active: #7aa2ff;
+      --region: rgba(91, 140, 255, 0.18);
+      --handle: #7aa2ff;
+      --playhead: #ff6b6f;
+      --input-bg: #12151b;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 960px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 20px; }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .row + .row { margin-top: 12px; }
+  button, .btn {
+    font: inherit;
+    border: 1px solid var(--border);
+    background: var(--input-bg);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 7px 14px;
+    cursor: pointer;
+  }
+  button:hover:not(:disabled), .btn:hover { border-color: var(--accent); }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600; min-width: 96px; }
+  button.preset.on { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  input[type=file] { display: none; }
+  input[type=text], input[type=number] {
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+    width: 96px;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--input-bg);
+    color: var(--text);
+  }
+  input[type=range] { flex: 1; min-width: 160px; accent-color: var(--accent); }
+  label.check { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; }
+  input[type=checkbox] { accent-color: var(--accent); width: 16px; height: 16px; }
+  .filename { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+  .time { font-variant-numeric: tabular-nums; color: var(--muted); margin-left: auto; }
+  .wave-wrap {
+    position: relative;
+    height: 160px;
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    touch-action: none;
+  }
+  .wave-wrap.drop { border-color: var(--accent); background: var(--region); }
+  canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
+  .placeholder {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    color: var(--muted); padding: 16px; pointer-events: none;
+  }
+  .label { color: var(--muted); font-size: 13px; min-width: 70px; }
+  .hint { color: var(--muted); font-size: 13px; margin-top: 10px; }
+  kbd {
+    font: 12px ui-monospace, Consolas, monospace;
+    border: 1px solid var(--border); border-bottom-width: 2px;
+    border-radius: 4px; padding: 0 5px; background: var(--input-bg);
+  }
+  .speed-val { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 52px; text-align: right; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Looper MP3</h1>
+  <p class="sub">Carica un file, scegli un intervallo, mettilo in loop e regola la velocità.</p>
+
+  <div class="panel">
+    <div class="row">
+      <label class="btn" for="file">Apri file…</label>
+      <input type="file" id="file" accept="audio/*,.mp3">
+      <span class="filename" id="filename">Nessun file caricato</span>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <div class="wave-wrap" id="waveWrap" style="flex:1">
+        <canvas id="wave"></canvas>
+        <div class="placeholder" id="placeholder">Trascina qui un file MP3 oppure usa “Apri file…”</div>
+      </div>
+    </div>
+    <div class="row">
+      <button class="primary" id="play" disabled>▶ Play</button>
+      <button id="stop" disabled>■ Stop</button>
+      <span class="time" id="time">0:00.00 / 0:00.00</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="row">
+      <span class="label">Intervallo</span>
+      <input type="text" id="startIn" placeholder="inizio" disabled>
+      <span>→</span>
+      <input type="text" id="endIn" placeholder="fine" disabled>
+      <button id="setA" disabled title="Tasto A">Imposta A</button>
+      <button id="setB" disabled title="Tasto B">Imposta B</button>
+      <button id="clearReg" disabled>Cancella</button>
+    </div>
+    <div class="row">
+      <span class="label"></span>
+      <label class="check"><input type="checkbox" id="loop" checked> Loop attivo</label>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="row">
+      <span class="label">Velocità</span>
+      <input type="range" id="speed" min="0.25" max="2" step="0.05" value="1">
+      <span class="speed-val" id="speedVal">1.00×</span>
+      <input type="number" id="speedIn" min="0.1" max="4" step="0.01" value="1" style="width:80px">
+    </div>
+    <div class="row">
+      <span class="label"></span>
+      <button class="preset" data-v="0.5">0.5×</button>
+      <button class="preset" data-v="0.75">0.75×</button>
+      <button class="preset on" data-v="1">1×</button>
+      <button class="preset" data-v="1.25">1.25×</button>
+      <button class="preset" data-v="1.5">1.5×</button>
+      <label class="check" style="margin-left:8px"><input type="checkbox" id="pitch" checked> Mantieni intonazione</label>
+    </div>
+  </div>
+
+  <p class="hint">
+    Trascina sulla forma d'onda per selezionare l'intervallo, trascina i bordi per regolarlo, clicca per spostarti.
+    Tasti: <kbd>Spazio</kbd> play/pausa · <kbd>A</kbd> / <kbd>B</kbd> imposta inizio/fine · <kbd>L</kbd> loop · <kbd>←</kbd> <kbd>→</kbd> ±2 s · <kbd>+</kbd> <kbd>−</kbd> velocità
+  </p>
+</main>
+
+<audio id="audio" preload="auto"></audio>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const audio = $('audio'), canvas = $('wave'), ctx = canvas.getContext('2d');
+  const wrap = $('waveWrap');
+  const ui = {
+    play: $('play'), stop: $('stop'), time: $('time'), filename: $('filename'),
+    startIn: $('startIn'), endIn: $('endIn'), setA: $('setA'), setB: $('setB'),
+    clearReg: $('clearReg'), loop: $('loop'), speed: $('speed'), speedVal: $('speedVal'),
+    speedIn: $('speedIn'), pitch: $('pitch'), placeholder: $('placeholder'),
+  };
+
+  let buffer = null;        // AudioBuffer decodificato (solo per la forma d'onda)
+  let duration = 0;
+  let region = null;        // {start, end} in secondi
+  let objectUrl = null;
+  let prevTime = 0;
+
+  // ---------- utilità ----------
+  const fmt = t => {
+    if (!isFinite(t) || t < 0) t = 0;
+    const m = Math.floor(t / 60);
+    const s = t - m * 60;
+    return m + ':' + s.toFixed(2).padStart(5, '0');
+  };
+  const parseTime = str => {
+    str = String(str).trim().replace(',', '.');
+    if (!str) return NaN;
+    const parts = str.split(':');
+    if (parts.length > 3) return NaN;
+    let t = 0;
+    for (const p of parts) {
+      const n = parseFloat(p);
+      if (isNaN(n)) return NaN;
+      t = t * 60 + n;
+    }
+    return t;
+  };
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+  // ---------- caricamento ----------
+  async function loadFile(file) {
+    if (!file) return;
+    audio.pause();
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+    objectUrl = URL.createObjectURL(file);
+    audio.src = objectUrl;
+    applySpeed(parseFloat(ui.speed.value));
+    applyPitch();
+    ui.filename.textContent = file.name;
+    ui.placeholder.textContent = 'Caricamento…';
+    ui.placeholder.style.display = 'flex';
+    region = null;
+    buffer = null;
+    draw();
+    try {
+      const data = await file.arrayBuffer();
+      const actx = new (window.AudioContext || window.webkitAudioContext)();
+      buffer = await actx.decodeAudioData(data);
+      actx.close();
+      duration = buffer.duration;
+      ui.placeholder.style.display = 'none';
+    } catch (e) {
+      ui.placeholder.textContent = 'Impossibile leggere la forma d\'onda (il file potrebbe comunque essere riproducibile).';
+    }
+    setEnabled(true);
+    updateRegionInputs();
+    draw();
+  }
+
+  audio.addEventListener('loadedmetadata', () => {
+    if (isFinite(audio.duration)) duration = audio.duration;
+    setEnabled(true);
+    draw();
+  });
+
+  function setEnabled(on) {
+    [ui.play, ui.stop, ui.startIn, ui.endIn, ui.setA, ui.setB].forEach(el => el.disabled = !on);
+    ui.clearReg.disabled = !region;
+  }
+
+  $('file').addEventListener('change', e => loadFile(e.target.files[0]));
+
+  // drag & drop su tutta la pagina
+  ['dragenter', 'dragover'].forEach(ev => document.addEventListener(ev, e => {
+    e.preventDefault(); wrap.classList.add('drop');
+  }));
+  ['dragleave', 'drop'].forEach(ev => document.addEventListener(ev, e => {
+    e.preventDefault();
+    if (ev === 'drop' || e.target === document.documentElement) wrap.classList.remove('drop');
+  }));
+  document.addEventListener('drop', e => {
+    const f = e.dataTransfer.files[0];
+    if (f) loadFile(f);
+  });
+
+  // ---------- forma d'onda ----------
+  let peaks = null, peaksWidth = 0;
+  function computePeaks(width) {
+    if (!buffer) return null;
+    const chans = [];
+    for (let c = 0; c < buffer.numberOfChannels; c++) chans.push(buffer.getChannelData(c));
+    const len = chans[0].length;
+    const step = len / width;
+    const out = new Float32Array(width);
+    let globalMax = 0;
+    for (let x = 0; x < width; x++) {
+      const s = Math.floor(x * step), e = Math.min(len, Math.floor((x + 1) * step));
+      let max = 0;
+      // salta campioni per velocità su file lunghi
+      const inc = Math.max(1, Math.floor((e - s) / 400));
+      for (const ch of chans) for (let i = s; i < e; i += inc) {
+        const v = Math.abs(ch[i]);
+        if (v > max) max = v;
+      }
+      out[x] = max;
+      if (max > globalMax) globalMax = max;
+    }
+    if (globalMax > 0) for (let x = 0; x < width; x++) out[x] /= globalMax;
+    return out;
+  }
+
+  function resize() {
+    const dpr = window.devicePixelRatio || 1;
+    const r = wrap.getBoundingClientRect();
+    canvas.width = Math.max(1, Math.round(r.width * dpr));
+    canvas.height = Math.max(1, Math.round(r.height * dpr));
+    peaks = null;
+    draw();
+  }
+  window.addEventListener('resize', resize);
+
+  const timeToX = t => duration ? (t / duration) * canvas.width : 0;
+  const xToTime = clientX => {
+    const r = canvas.getBoundingClientRect();
+    return clamp((clientX - r.left) / r.width, 0, 1) * duration;
+  };
+
+  function draw() {
+    const W = canvas.width, H = canvas.height, dpr = window.devicePixelRatio || 1;
+    ctx.clearRect(0, 0, W, H);
+    if (!duration) return;
+
+    // regione
+    if (region) {
+      const x1 = timeToX(region.start), x2 = timeToX(region.end);
+      ctx.fillStyle = css('--region');
+      ctx.fillRect(x1, 0, x2 - x1, H);
+    }
+
+    // onda
+    if (buffer) {
+      if (!peaks || peaksWidth !== W) { peaks = computePeaks(W); peaksWidth = W; }
+      const mid = H / 2, amp = H / 2 - 6 * dpr;
+      const rs = region ? timeToX(region.start) : -1, re = region ? timeToX(region.end) : -1;
+      const waveCol = css('--wave'), activeCol = css('--wave-active');
+      for (let x = 0; x < W; x++) {
+        const h = Math.max(1, peaks[x] * amp);
+        ctx.fillStyle = (x >= rs && x <= re) ? activeCol : waveCol;
+        ctx.fillRect(x, mid - h, 1, h * 2);
+      }
+    }
+
+    // maniglie
+    if (region) {
+      ctx.fillStyle = css('--handle');
+      for (const t of [region.start, region.end]) {
+        const x = timeToX(t);
+        ctx.fillRect(x - dpr, 0, 2 * dpr, H);
+        ctx.fillRect(x - 5 * dpr, 0, 10 * dpr, 6 * dpr);
+        ctx.fillRect(x - 5 * dpr, H - 6 * dpr, 10 * dpr, 6 * dpr);
+      }
+    }
+
+    // testina
+    const px = timeToX(audio.currentTime);
+    ctx.fillStyle = css('--playhead');
+    ctx.fillRect(px - dpr, 0, 2 * dpr, H);
+  }
+
+  // ---------- interazione con la forma d'onda ----------
+  let drag = null; // {mode: 'new'|'start'|'end', anchor, startX, moved}
+  canvas.addEventListener('pointerdown', e => {
+    if (!duration) return;
+    canvas.setPointerCapture(e.pointerId);
+    const t = xToTime(e.clientX);
+    const r = canvas.getBoundingClientRect();
+    const pxPerSec = r.width / duration;
+    let mode = 'new';
+    if (region) {
+      const ds = Math.abs(t - region.start) * pxPerSec;
+      const de = Math.abs(t - region.end) * pxPerSec;
+      if (Math.min(ds, de) <= 8) mode = ds <= de ? 'start' : 'end';
+    }
+    drag = { mode, anchor: t, startX: e.clientX, moved: false };
+  });
+
+  canvas.addEventListener('pointermove', e => {
+    if (!duration) return;
+    const t = xToTime(e.clientX);
+    if (!drag) {
+      // cursore sopra le maniglie
+      let near = false;
+      if (region) {
+        const pxPerSec = canvas.getBoundingClientRect().width / duration;
+        near = Math.min(Math.abs(t - region.start), Math.abs(t - region.end)) * pxPerSec <= 8;
+      }
+      canvas.style.cursor = near ? 'ew-resize' : 'crosshair';
+      return;
+    }
+    if (Math.abs(e.clientX - drag.startX) > 3) drag.moved = true;
+    if (!drag.moved) return;
+    if (drag.mode === 'new') {
+      setRegion(Math.min(drag.anchor, t), Math.max(drag.anchor, t));
+    } else if (drag.mode === 'start') {
+      if (t > region.end) { drag.mode = 'end'; setRegion(region.end, t); }
+      else setRegion(t, region.end);
+    } else {
+      if (t < region.start) { drag.mode = 'start'; setRegion(t, region.start); }
+      else setRegion(region.start, t);
+    }
+  });
+
+  const endDrag = e => {
+    if (!drag) return;
+    if (!drag.moved) seek(xToTime(e.clientX));
+    else if (region && region.end - region.start < 0.05) clearRegion();
+    else if (region && ui.loop.checked && !audio.paused &&
+             (audio.currentTime < region.start || audio.currentTime > region.end)) {
+      seek(region.start);
+    }
+    drag = null;
+  };
+  canvas.addEventListener('pointerup', endDrag);
+  canvas.addEventListener('pointercancel', () => { drag = null; });
+
+  // ---------- regione ----------
+  function setRegion(s, e) {
+    s = clamp(s, 0, duration); e = clamp(e, 0, duration);
+    if (e < s) [s, e] = [e, s];
+    region = { start: s, end: e };
+    ui.clearReg.disabled = false;
+    updateRegionInputs();
+    draw();
+  }
+  function clearRegion() {
+    region = null;
+    ui.clearReg.disabled = true;
+    updateRegionInputs();
+    draw();
+  }
+  function updateRegionInputs() {
+    if (document.activeElement !== ui.startIn) ui.startIn.value = region ? fmt(region.start) : '';
+    if (document.activeElement !== ui.endIn) ui.endIn.value = region ? fmt(region.end) : '';
+  }
+  function commitInputs() {
+    let s = parseTime(ui.startIn.value), e = parseTime(ui.endIn.value);
+    if (isNaN(s)) s = region ? region.start : 0;
+    if (isNaN(e)) e = region ? region.end : duration;
+    if (e - s >= 0.05) setRegion(s, e);
+    updateRegionInputs();
+  }
+  [ui.startIn, ui.endIn].forEach(el => {
+    el.addEventListener('change', commitInputs);
+    el.addEventListener('blur', () => setTimeout(updateRegionInputs, 0));
+    el.addEventListener('keydown', e => { if (e.key === 'Enter') { commitInputs(); el.blur(); } });
+  });
+
+  function setA() {
+    const t = audio.currentTime;
+    if (region && t < region.end) setRegion(t, region.end);
+    else setRegion(t, duration);
+  }
+  function setB() {
+    const t = audio.currentTime;
+    if (region && t > region.start) setRegion(region.start, t);
+    else setRegion(0, t);
+  }
+  ui.setA.addEventListener('click', setA);
+  ui.setB.addEventListener('click', setB);
+  ui.clearReg.addEventListener('click', clearRegion);
+
+  // ---------- riproduzione ----------
+  function seek(t) {
+    audio.currentTime = clamp(t, 0, duration);
+    prevTime = audio.currentTime;
+    draw();
+    updateTime();
+  }
+  function togglePlay() {
+    if (!audio.src) return;
+    if (audio.paused) {
+      if (region && ui.loop.checked &&
+          (audio.currentTime < region.start || audio.currentTime >= region.end - 0.01)) {
+        seek(region.start);
+      }
+      audio.play();
+    } else {
+      audio.pause();
+    }
+  }
+  function stop() {
+    audio.pause();
+    seek(region ? region.start : 0);
+  }
+  ui.play.addEventListener('click', togglePlay);
+  ui.stop.addEventListener('click', stop);
+  audio.addEventListener('play', () => { ui.play.textContent = '❚❚ Pausa'; });
+  audio.addEventListener('pause', () => { ui.play.textContent = '▶ Play'; });
+  audio.addEventListener('ended', () => {
+    // regione che arriva fino alla fine del file
+    if (region && ui.loop.checked && region.end >= duration - 0.05) {
+      seek(region.start);
+      audio.play();
+    }
+  });
+
+  function updateTime() {
+    ui.time.textContent = fmt(audio.currentTime) + ' / ' + fmt(duration);
+  }
+
+  // controllo loop ad ogni frame (più preciso di 'timeupdate')
+  function tick() {
+    const t = audio.currentTime;
+    if (region && ui.loop.checked && !audio.paused && !drag) {
+      // salta indietro solo quando la testina attraversa la fine della regione
+      if (prevTime <= region.end && t >= region.end) {
+        audio.currentTime = region.start;
+      }
+    }
+    prevTime = audio.currentTime;
+    if (!audio.paused || drag) { draw(); updateTime(); }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  // ---------- velocità ----------
+  function applySpeed(v) {
+    v = clamp(Math.round(v * 100) / 100, 0.1, 4);
+    if (isNaN(v)) return;
+    audio.playbackRate = v;
+    audio.defaultPlaybackRate = v;
+    ui.speed.value = clamp(v, 0.25, 2);
+    ui.speedVal.textContent = v.toFixed(2) + '×';
+    if (document.activeElement !== ui.speedIn) ui.speedIn.value = v;
+    document.querySelectorAll('.preset').forEach(b =>
+      b.classList.toggle('on', Math.abs(parseFloat(b.dataset.v) - v) < 0.001));
+  }
+  function applyPitch() {
+    const on = ui.pitch.checked;
+    audio.preservesPitch = on;
+    audio.mozPreservesPitch = on;
+    audio.webkitPreservesPitch = on;
+  }
+  ui.speed.addEventListener('input', () => applySpeed(parseFloat(ui.speed.value)));
+  ui.speedIn.addEventListener('change', () => applySpeed(parseFloat(ui.speedIn.value)));
+  document.querySelectorAll('.preset').forEach(b =>
+    b.addEventListener('click', () => applySpeed(parseFloat(b.dataset.v))));
+  ui.pitch.addEventListener('change', applyPitch);
+  // togli il focus dai controlli dopo l'uso, così Spazio/frecce restano scorciatoie globali
+  document.addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (b) b.blur();
+  });
+  document.addEventListener('change', e => {
+    if (e.target.type === 'checkbox' || e.target.type === 'range') e.target.blur();
+  });
+
+  // ---------- tastiera ----------
+  document.addEventListener('keydown', e => {
+    const tag = (e.target.tagName || '').toLowerCase();
+    if (tag === 'input' && e.target.type !== 'checkbox' && e.target.type !== 'range') return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (!duration) return;
+    switch (e.key) {
+      case ' ': e.preventDefault(); togglePlay(); break;
+      case 'a': case 'A': setA(); break;
+      case 'b': case 'B': setB(); break;
+      case 'l': case 'L': ui.loop.checked = !ui.loop.checked; break;
+      case 'ArrowLeft': e.preventDefault(); seek(audio.currentTime - 2); break;
+      case 'ArrowRight': e.preventDefault(); seek(audio.currentTime + 2); break;
+      case '+': case '=': applySpeed(audio.playbackRate + 0.05); break;
+      case '-': case '_': applySpeed(audio.playbackRate - 0.05); break;
+    }
+  });
+
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
+  applyPitch();
+  resize();
+})();
+</script>
+</body>
+</html>
