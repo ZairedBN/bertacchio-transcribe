@@ -13,11 +13,11 @@ $Utf8      = New-Object Text.UTF8Encoding $false
 
 if (-not (Test-Path $Cache)) { New-Item -ItemType Directory -Path $Cache | Out-Null }
 
-# file della pagina serviti dal server
-$StaticFiles = @{
-  '/'            = @('looper.html', 'text/html; charset=utf-8')
-  '/looper.html' = @('looper.html', 'text/html; charset=utf-8')
-  '/looper.js'   = @('looper.js',   'text/javascript; charset=utf-8')
+# file della pagina serviti dal server (solo questi percorsi)
+$StaticPattern = '^/(index\.html|manifest\.webmanifest|sw\.js|js/[a-z0-9-]+\.js|icons/[a-z0-9-]+\.(png|svg))$'
+$StaticTypes = @{
+  '.html' = 'text/html; charset=utf-8'; '.js' = 'text/javascript; charset=utf-8'
+  '.webmanifest' = 'application/manifest+json'; '.png' = 'image/png'; '.svg' = 'image/svg+xml'
 }
 
 $MimeTypes = @{
@@ -140,6 +140,10 @@ function Handle-Api($ctx, [string]$path) {
   if ($req.Headers['X-Looper'] -ne '1') { Send-Json $ctx 403 @{ error = 'Richiesta non consentita' }; return }
 
   switch ($path) {
+    '/api/ping' {
+      Send-Json $ctx 200 @{ ok = $true; links = (Test-Path $YtDlp) }
+    }
+
     '/api/load' {
       if (-not (Test-Path $YtDlp)) {
         Send-Json $ctx 500 @{ error = "Manca bin\yt-dlp.exe. Scaricalo da https://github.com/yt-dlp/yt-dlp/releases/latest e mettilo nella cartella bin." }
@@ -234,9 +238,14 @@ function Handle-Request($ctx) {
   $path = $req.Url.AbsolutePath
   Write-Host ("{0}  {1} {2}" -f (Get-Date -Format 'HH:mm:ss'), $req.HttpMethod, $req.Url.PathAndQuery)
 
-  if ($StaticFiles.ContainsKey($path)) {
-    $f = $StaticFiles[$path]
-    Send-Bytes $ctx 200 $f[1] ([IO.File]::ReadAllBytes((Join-Path $Root $f[0])))
+  if ($path -eq '/' -or $path -eq '/looper.html') { $path = '/index.html' }
+  if ($path -cmatch $StaticPattern) {
+    $file = Join-Path $Root ($path.Substring(1) -replace '/', '\')
+    if (Test-Path $file -PathType Leaf) {
+      Send-Bytes $ctx 200 $StaticTypes[[IO.Path]::GetExtension($file).ToLower()] ([IO.File]::ReadAllBytes($file))
+    } else {
+      Send-Json $ctx 404 @{ error = 'Non trovato' }
+    }
     return
   }
 

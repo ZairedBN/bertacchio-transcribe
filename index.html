@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Looper MP3</title>
+<meta name="description" content="Metti in loop un passaggio di un brano, rallentalo e studialo con il tuo strumento.">
+<meta name="theme-color" content="#2f6fed">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --panel: #ffffff;
+    --text: #1d2330;
+    --muted: #697386;
+    --border: #dde1e8;
+    --accent: #2f6fed;
+    --accent-text: #ffffff;
+    --wave: #9aa6bb;
+    --wave-active: #2f6fed;
+    --region: rgba(47, 111, 237, 0.16);
+    --handle: #2f6fed;
+    --playhead: #e5484d;
+    --grid: rgba(105, 115, 134, 0.22);
+    --grid-bar: rgba(105, 115, 134, 0.55);
+    --view: rgba(47, 111, 237, 0.12);
+    --input-bg: #ffffff;
+    --chip: #eef3ff;
+    --ok: #1a7f4b;
+    --shadow: 0 8px 28px rgba(20, 30, 50, .16);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151b;
+      --panel: #1b1f27;
+      --text: #e7eaf0;
+      --muted: #8d97a8;
+      --border: #2c323d;
+      --accent: #5b8cff;
+      --accent-text: #0d1117;
+      --wave: #4a5366;
+      --wave-active: #7aa2ff;
+      --region: rgba(91, 140, 255, 0.18);
+      --handle: #7aa2ff;
+      --playhead: #ff6b6f;
+      --grid: rgba(160, 170, 190, 0.16);
+      --grid-bar: rgba(160, 170, 190, 0.42);
+      --view: rgba(91, 140, 255, 0.16);
+      --input-bg: #12151b;
+      --chip: #222a3a;
+      --ok: #4cc38a;
+      --shadow: 0 8px 28px rgba(0, 0, 0, .5);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 960px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 20px; }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+  .row + .row, .row + .link-msg + .row, .note + .row { margin-top: 12px; }
+  [hidden] { display: none !important; }
+  button, .btn {
+    font: inherit;
+    border: 1px solid var(--border);
+    background: var(--input-bg);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 7px 14px;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  button:hover:not(:disabled), .btn:hover { border-color: var(--accent); }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
+  button.small { padding: 3px 10px; font-size: 13px; }
+  button.icon { padding: 5px 10px; min-width: 34px; }
+  button.preset.on, .seg button.on { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  input[type=file] { display: none; }
+  input[type=text], input[type=number], select {
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+    width: 96px;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--input-bg);
+    color: var(--text);
+  }
+  select { width: auto; max-width: 100%; }
+  input.num-s { width: 72px; }
+  input[type=range] { flex: 1; min-width: 120px; accent-color: var(--accent); }
+  label.check { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; }
+  input[type=checkbox] { accent-color: var(--accent); width: 16px; height: 16px; }
+  .filename { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1 1 160px; }
+  .label { color: var(--muted); font-size: 13px; min-width: 76px; }
+  .muted { color: var(--muted); font-size: 13px; }
+  .note { font-size: 12px; color: var(--muted); margin: 8px 0 0; }
+  .note:empty { display: none; }
+  .hint { color: var(--muted); font-size: 13px; margin-top: 10px; }
+  kbd {
+    font: 12px ui-monospace, Consolas, monospace;
+    border: 1px solid var(--border); border-bottom-width: 2px;
+    border-radius: 4px; padding: 0 5px; background: var(--input-bg);
+  }
+  .tnum { font-variant-numeric: tabular-nums; }
+  .touch-hint { display: none; }
+
+  /* link */
+  input[type=text].link-in { flex: 1; min-width: 180px; width: auto; }
+  .link-msg { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  .link-msg:empty { display: none; }
+  .link-msg.err { color: var(--playhead); }
+
+  /* recenti */
+  .recent-wrap { position: relative; }
+  .recent-panel {
+    position: absolute; top: calc(100% + 6px); left: 0; z-index: 30;
+    width: min(440px, calc(100vw - 32px));
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    box-shadow: var(--shadow); padding: 6px;
+  }
+  .recent-list { max-height: 340px; overflow-y: auto; }
+  .recent-item { display: flex; align-items: center; gap: 6px; border-radius: 8px; }
+  .recent-item:hover { background: var(--chip); }
+  .recent-item .open { flex: 1; min-width: 0; text-align: left; border: 0; background: transparent; padding: 8px; }
+  .recent-item .open strong { display: block; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .recent-item .open span { display: block; color: var(--muted); font-size: 12px; }
+  .recent-item .del { border: 0; background: transparent; color: var(--muted); padding: 8px 12px; }
+  .recent-item .del:hover { color: var(--playhead); }
+  .recent-empty { color: var(--muted); padding: 12px 8px; font-size: 14px; }
+  .recent-foot { border-top: 1px solid var(--border); margin-top: 6px; padding: 6px 2px 0; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+
+  /* forma d'onda */
+  .wave-bar { display: flex; align-items: center; gap: 6px; margin-top: 14px; margin-bottom: 6px; flex-wrap: wrap; }
+  .wave-bar .time { margin-right: auto; color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+  .wave-wrap {
+    position: relative;
+    height: 160px;
+    border: 1px dashed var(--border);
+    border-radius: 10px 10px 0 0;
+    overflow: hidden;
+    touch-action: none;
+  }
+  .wave-wrap.drop { border-color: var(--accent); background: var(--region); }
+  .overview-wrap {
+    height: 30px; border: 1px dashed var(--border); border-top: 0; border-radius: 0 0 10px 10px;
+    overflow: hidden; touch-action: none;
+  }
+  canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
+  #overview { cursor: pointer; }
+  .placeholder {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    color: var(--muted); padding: 16px; pointer-events: none;
+  }
+  .tempo input.bpm { width: 78px; }
+  .tempo .det { font-size: 12px; color: var(--muted); }
+  .vol { display: inline-flex; align-items: center; gap: 6px; flex: 1; min-width: 200px; }
+
+  /* barra dei comandi principali */
+  .transport { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .transport #play { min-width: 104px; }
+  .toggle {
+    display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 12px; cursor: pointer; user-select: none; background: var(--input-bg);
+  }
+  .toggle:has(input:checked) { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .speed-mini { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; }
+  .speed-mini span { min-width: 54px; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  /* sezioni */
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; min-width: 0; }
+  .chip { display: inline-flex; align-items: center; border: 1px solid var(--border); background: var(--chip); border-radius: 999px; overflow: hidden; }
+  .chip.on { border-color: var(--accent); }
+  .chip button { border: 0; background: transparent; border-radius: 0; padding: 4px 4px 4px 12px; font-size: 14px; }
+  .chip.on button.name { color: var(--accent); font-weight: 600; }
+  .chip button.x { padding: 4px 10px 4px 6px; color: var(--muted); }
+  .chip button.x:hover { color: var(--playhead); }
+  .chip small { color: var(--muted); font-size: 11px; margin-left: 4px; }
+  .counter { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 14px; }
+  .edge { display: inline-flex; align-items: center; gap: 4px; }
+
+  /* pannelli richiudibili */
+  details { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px; }
+  details.panel { margin-top: 0; border-top: 1px solid var(--border); padding-top: 16px; }
+  summary { cursor: pointer; font-weight: 600; color: var(--muted); user-select: none; padding: 4px 0; }
+  summary:hover { color: var(--text); }
+  details[open] summary { color: var(--text); margin-bottom: 12px; }
+  .speed-val { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 52px; text-align: right; }
+  .slider-val { font-variant-numeric: tabular-nums; min-width: 64px; text-align: right; font-size: 14px; }
+
+  /* allenatore */
+  .seg { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+  .tr-val { font-variant-numeric: tabular-nums; min-width: 120px; font-size: 14px; }
+  .tr-progress { position: relative; height: 10px; background: var(--chip); border-radius: 99px; overflow: hidden; flex: 1; min-width: 140px; }
+  .tr-progress > div { position: absolute; inset: 0 auto 0 0; background: var(--accent); border-radius: 99px; transition: width .3s; }
+  .tr-status { font-size: 14px; color: var(--accent); font-weight: 600; }
+  .tr-hint { font-size: 13px; color: var(--playhead); }
+  .tr-hint:empty { display: none; }
+  #trStartBtn { font-size: 16px; padding: 9px 18px; }
+
+  /* ---------- telefoni e tablet ---------- */
+  @media (hover: none) and (pointer: coarse) {
+    button, .btn, .toggle, select, input[type=text], input[type=number] { min-height: 44px; }
+    button.small { min-height: 36px; padding: 4px 12px; }
+    .chip button { min-height: 36px; }
+    input[type=range] { height: 32px; }
+    .kbd-hint { display: none; }
+    .touch-hint { display: block; }
+    .chip small { display: none; }
+  }
+  @media (max-width: 700px) {
+    main { padding: 16px 12px 110px; }
+    h1 { font-size: 20px; }
+    .sub { margin-bottom: 14px; }
+    .panel { padding: 12px; border-radius: 10px; }
+    .label { min-width: 0; width: 100%; }
+    .wave-wrap { height: 130px; }
+    .transport {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; margin: 0;
+      background: var(--panel); border-top: 1px solid var(--border); box-shadow: var(--shadow);
+      padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); flex-wrap: nowrap;
+    }
+    .transport #play { min-width: 0; flex: 1; }
+    .transport .speed-mini { margin-left: 0; }
+    .edge input[type=text] { width: 84px; }
+    .recent-panel { position: fixed; top: 70px; left: 12px; right: 12px; width: auto; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Looper MP3</h1>
+  <p class="sub">Carica un brano, scegli un passaggio, mettilo in loop e rallentalo per studiarlo.</p>
+
+  <!-- ===== Brano ===== -->
+  <div class="panel">
+    <div class="row">
+      <label class="btn" for="file">Apri file…</label>
+      <input type="file" id="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.flac">
+      <div class="recent-wrap">
+        <button id="recentBtn">Recenti ▾</button>
+        <div class="recent-panel" id="recentPanel" hidden>
+          <div class="recent-list" id="recentList"></div>
+          <div class="recent-foot">
+            <span class="muted">Salvati su questo dispositivo</span>
+            <button class="small" id="openCache" hidden>Apri cartella</button>
+          </div>
+        </div>
+      </div>
+      <span class="filename" id="filename">Nessun brano caricato</span>
+    </div>
+    <div class="row" id="linkRow" hidden>
+      <input type="text" id="linkIn" class="link-in" placeholder="…oppure incolla un link (YouTube, SoundCloud, Bandcamp…)" inputmode="url">
+      <button id="linkBtn">Carica link</button>
+    </div>
+    <div class="link-msg" id="linkMsg"></div>
+
+    <div class="wave-bar">
+      <span class="time" id="time">0:00.00 / 0:00.00</span>
+      <span class="muted" id="zoomLabel"></span>
+      <button class="small" id="zoomOut" title="Riduci zoom" disabled>−</button>
+      <button class="small" id="zoomIn" title="Aumenta zoom" disabled>+</button>
+      <button class="small" id="zoomSel" title="Ingrandisci il passaggio selezionato" disabled>Selezione</button>
+      <button class="small" id="zoomAll" title="Mostra tutto il brano" disabled>Tutto</button>
+    </div>
+    <div class="wave-wrap" id="waveWrap">
+      <canvas id="wave"></canvas>
+      <div class="placeholder" id="placeholder">Trascina qui un file audio oppure usa “Apri file…”</div>
+    </div>
+    <div class="overview-wrap" id="overviewWrap" title="Panoramica: tocca per spostarti, trascina il riquadro per scorrere">
+      <canvas id="overview"></canvas>
+    </div>
+
+    <div class="row tempo" id="tempoRow" hidden>
+      <span class="label">Tempo</span>
+      <input type="number" id="bpm" class="bpm" min="20" max="300" step="0.1" inputmode="decimal" title="Battiti al minuto (BPM)">
+      <span class="muted">BPM</span>
+      <span class="det" id="bpmNote"></span>
+      <button class="small" id="bpmHalf" title="Dimezza">÷2</button>
+      <button class="small" id="bpmX2" title="Raddoppia">×2</button>
+      <button class="small" id="tapBtn" title="Batti a tempo (tasto T)">Tap</button>
+      <button class="small" id="beatOne" title="Sposta la griglia: il beat 1 cade dove si trova ora la testina">Il beat 1 è qui</button>
+      <select id="meter" title="Tempo in chiave">
+        <option value="4">4/4</option>
+        <option value="3">3/4</option>
+        <option value="6">6/8</option>
+      </select>
+      <label class="check"><input type="checkbox" id="gridShow" checked> Griglia</label>
+      <label class="check"><input type="checkbox" id="snap" checked> Aggancia ai beat</label>
+    </div>
+
+    <div class="transport" id="transport">
+      <button class="primary" id="play" disabled>▶ Play</button>
+      <button id="stop" disabled title="Stop">■</button>
+      <label class="toggle" title="Tasto L"><input type="checkbox" id="loop" checked> Loop</label>
+      <div class="speed-mini">
+        <button class="icon" id="spDown" title="Più lento">−</button>
+        <span id="speedMini">1.00×</span>
+        <button class="icon" id="spUp" title="Più veloce">+</button>
+      </div>
+    </div>
+    <div class="row">
+      <label class="vol" title="Volume"><span class="muted">Volume</span>
+        <input type="range" id="vol" min="0" max="150" step="1" value="100">
+        <span class="muted tnum" id="volVal">100%</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- ===== Passaggio in loop ===== -->
+  <div class="panel">
+    <div class="row">
+      <span class="label">Passaggio</span>
+      <span class="edge">
+        <button class="icon" id="startDown" title="Inizio prima" disabled>−</button>
+        <input type="text" id="startIn" placeholder="inizio" disabled>
+        <button class="icon" id="startUp" title="Inizio dopo" disabled>+</button>
+      </span>
+      <span>→</span>
+      <span class="edge">
+        <button class="icon" id="endDown" title="Fine prima" disabled>−</button>
+        <input type="text" id="endIn" placeholder="fine" disabled>
+        <button class="icon" id="endUp" title="Fine dopo" disabled>+</button>
+      </span>
+      <button id="setA" disabled title="Tasto A">Imposta A</button>
+      <button id="setB" disabled title="Tasto B">Imposta B</button>
+      <button id="clearReg" disabled>Cancella</button>
+    </div>
+    <div class="row">
+      <span class="label">Prima di ripartire</span>
+      <select id="pauseMode">
+        <option value="none">riparti subito</option>
+        <option value="bar1">conteggio di 1 battuta</option>
+        <option value="bar2">conteggio di 2 battute</option>
+        <option value="p2">pausa di 2 secondi</option>
+      </select>
+      <span id="bpm2Box" hidden>
+        <input type="number" id="bpm2" class="num-s" min="20" max="300" step="0.1" inputmode="decimal"> <span class="muted">BPM</span>
+      </span>
+      <label class="check" id="countFirstBox" hidden><input type="checkbox" id="countFirst" checked> anche al primo Play</label>
+      <span class="counter" id="counter"></span>
+    </div>
+    <p class="note" id="countHint"></p>
+    <div class="row">
+      <span class="label">Sezioni</span>
+      <div class="chips" id="chips"></div>
+      <button class="small" id="saveSection" disabled>＋ Salva sezione</button>
+    </div>
+  </div>
+
+  <!-- ===== Velocità ===== -->
+  <div class="panel">
+    <div class="row">
+      <span class="label">Velocità</span>
+      <input type="range" id="speed" min="0.1" max="2" step="0.05" value="1">
+      <span class="speed-val" id="speedVal">1.00×</span>
+      <input type="number" id="speedIn" min="0.1" max="4" step="0.01" value="1" style="width:80px" inputmode="decimal">
+    </div>
+    <div class="row">
+      <span class="label"></span>
+      <button class="preset" data-v="0.25">0.25×</button>
+      <button class="preset" data-v="0.5">0.5×</button>
+      <button class="preset" data-v="0.75">0.75×</button>
+      <button class="preset on" data-v="1">1×</button>
+      <button class="preset" data-v="1.25">1.25×</button>
+      <label class="check" style="margin-left:4px"><input type="checkbox" id="pitch" checked> Mantieni intonazione</label>
+    </div>
+
+    <details data-key="trainer" id="trainerBox">
+      <summary>Allenatore di velocità</summary>
+      <p class="note" style="margin-top:0">Parti lento: a ogni ripetizione del passaggio la velocità sale da sola fino all'obiettivo.</p>
+      <div class="row">
+        <span class="label">Partenza</span>
+        <input type="range" id="trStart" min="25" max="150" step="5" value="70">
+        <span class="tr-val" id="trStartVal"></span>
+      </div>
+      <div class="row">
+        <span class="label">Obiettivo</span>
+        <input type="range" id="trTarget" min="25" max="150" step="5" value="100">
+        <span class="tr-val" id="trTargetVal"></span>
+      </div>
+      <div class="row">
+        <span class="label">Aumento</span>
+        <span class="seg">
+          <button class="small tr-preset" data-p="gentle">Graduale</button>
+          <button class="small tr-preset" data-p="normal">Normale</button>
+          <button class="small tr-preset" data-p="fast">Veloce</button>
+          <button class="small tr-preset" data-p="custom">Personalizza</button>
+        </span>
+        <span class="muted" id="trPresetNote"></span>
+        <span id="trCustom" hidden>
+          + <input type="number" id="trStep" class="num-s" min="1" max="50" step="1" value="5"> % ogni
+          <input type="number" id="trEvery" class="num-s" min="1" max="50" step="1" value="2"> giri
+        </span>
+      </div>
+      <div class="row" id="trIdle">
+        <button class="primary" id="trStartBtn">▶ Avvia allenamento</button>
+        <span class="tr-hint" id="trHint"></span>
+      </div>
+      <div id="trRun" hidden>
+        <div class="row">
+          <span class="muted tnum" id="trFrom"></span>
+          <div class="tr-progress"><div id="trBar"></div></div>
+          <span class="muted tnum" id="trTo"></span>
+        </div>
+        <div class="row"><span class="tr-status" id="trainerStatus"></span></div>
+        <div class="row">
+          <button id="trPause">❚❚ Pausa</button>
+          <button id="trRestart">↺ Ricomincia</button>
+          <button id="trStop">■ Ferma allenamento</button>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <!-- ===== Tonalità e suono ===== -->
+  <details class="panel" data-key="sound">
+    <summary>Tonalità e suono</summary>
+    <div class="row">
+      <span class="label">Trasposizione</span>
+      <input type="range" id="semi" min="-12" max="12" step="1" value="0">
+      <span class="slider-val" id="semiVal">0 semitoni</span>
+    </div>
+    <div class="row">
+      <span class="label">Accordatura</span>
+      <input type="range" id="cents" min="-50" max="50" step="1" value="0">
+      <span class="slider-val" id="centsVal">0 cent</span>
+    </div>
+    <p class="note">Cambia la tonalità senza cambiare la velocità (es. per suonare con il capotasto o con uno strumento accordato diversamente). Qualità adatta allo studio.</p>
+    <div class="row">
+      <span class="label">Bassi</span>
+      <input type="range" id="eqLow" min="-12" max="12" step="1" value="0">
+      <span class="slider-val" id="eqLowVal">0 dB</span>
+    </div>
+    <div class="row">
+      <span class="label">Medi</span>
+      <input type="range" id="eqMid" min="-12" max="12" step="1" value="0">
+      <span class="slider-val" id="eqMidVal">0 dB</span>
+    </div>
+    <div class="row">
+      <span class="label">Alti</span>
+      <input type="range" id="eqHigh" min="-12" max="12" step="1" value="0">
+      <span class="slider-val" id="eqHighVal">0 dB</span>
+    </div>
+    <div class="row">
+      <span class="label">Ascolta</span>
+      <select id="iso">
+        <option value="normal">tutto il brano</option>
+        <option value="left">solo canale sinistro</option>
+        <option value="right">solo canale destro</option>
+        <option value="novocal">voce ridotta</option>
+        <option value="bass">solo bassi</option>
+        <option value="nobass">senza bassi</option>
+      </select>
+      <label class="check"><input type="checkbox" id="fade" checked> Dissolvenza ai bordi del loop</label>
+    </div>
+    <div class="row">
+      <button class="small" id="soundReset">Reimposta</button>
+      <span class="note" id="soundNote"></span>
+    </div>
+  </details>
+
+  <p class="hint kbd-hint">
+    Trascina sulla forma d'onda per selezionare il passaggio, trascina i bordi per regolarlo, clicca per spostarti.
+    <kbd>Ctrl</kbd>+rotella (o pizzico) per lo zoom, <kbd>Alt</kbd> mentre trascini per non agganciarti ai beat.<br>
+    Tasti: <kbd>Spazio</kbd> play/pausa · <kbd>A</kbd> / <kbd>B</kbd> inizio/fine · <kbd>L</kbd> loop · <kbd>T</kbd> tap tempo · <kbd>1</kbd>–<kbd>9</kbd> sezioni ·
+    <kbd>←</kbd> <kbd>→</kbd> ±2 s · <kbd>+</kbd> <kbd>−</kbd> velocità ·
+    pedale/<kbd>PagGiù</kbd> <kbd>↓</kbd> play/pausa · <kbd>PagSu</kbd> <kbd>↑</kbd> ricomincia
+  </p>
+  <p class="hint touch-hint">Sul telefono: un dito per selezionare, due dita per lo zoom. Tocca la barra sotto la forma d'onda per spostarti nel brano.</p>
+</main>
+
+<audio id="audio" preload="auto" playsinline></audio>
+<script src="js/util.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/bpm.js"></script>
+<script src="js/audio-fx.js"></script>
+<script src="js/waveform.js"></script>
+<script src="js/trainer.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
