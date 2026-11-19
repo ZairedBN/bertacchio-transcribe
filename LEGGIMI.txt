@@ -4,11 +4,22 @@ LOOPER MP3 - per studiare i brani con il tuo strumento
 Carichi un brano, scegli un passaggio, lo metti in loop e lo rallenti
 (senza cambiare l'intonazione) finche' non ti viene.
 
-Funziona su Windows 10/11 con Chrome o Edge. Non serve installare niente.
+
+1. DOVE FUNZIONA
+----------------
+- WINDOWS (questa cartella): tutte le funzioni, compreso caricare brani da un link
+  (YouTube, SoundCloud, Bandcamp...). Serve Chrome o Edge.
+- ANDROID (telefono e tablet), MAC e qualsiasi computer: usa la versione online
+  (link qui sotto) con Chrome, Edge o Safari. Funziona tutto tranne i link:
+  i brani si aprono dai file del dispositivo.
+  Versione online: [link in arrivo]
+  Puoi installarla come app: su Android menu del browser > "Aggiungi a schermata Home";
+  su Mac con Chrome/Edge l'icona "Installa" nella barra dell'indirizzo.
+  Dopo la prima apertura funziona anche senza internet.
 
 
-1. PRIMO AVVIO
---------------
+2. PRIMO AVVIO SU WINDOWS
+-------------------------
 1) Estrai lo zip: tasto destro sul file .zip > "Estrai tutto..."
    (ad esempio sul Desktop). NON avviarlo da dentro lo zip.
 2) Apri la cartella "Looper MP3" e fai doppio clic su  avvia-looper.bat
@@ -18,50 +29,70 @@ Funziona su Windows 10/11 con Chrome o Edge. Non serve installare niente.
 
 Se Windows mostra "Windows ha protetto il PC":
    clicca "Ulteriori informazioni" > "Esegui comunque".
-   Succede la prima volta con i programmi scaricati da internet.
-
-Se il browser non si apre da solo, vai all'indirizzo:
-   http://localhost:8765
+Se il browser non si apre da solo, vai all'indirizzo:  http://localhost:8765
 
 
-2. USO DI BASE
+3. USO DI BASE
 --------------
 - CARICARE UN BRANO
-  "Apri file..." oppure trascina un file audio (mp3, m4a, wav...) sulla pagina.
-  Oppure incolla un link (YouTube, SoundCloud, Bandcamp...) e premi "Carica link".
+  "Apri file..." oppure trascina un file audio sulla pagina.
+  Su Windows puoi anche incollare un link e premere "Carica link".
+  "Recenti" riapre al volo i brani gia' usati.
 
 - SCEGLIERE IL PASSAGGIO
-  Trascina col mouse sulla forma d'onda: la zona evidenziata e' il loop.
-  Trascina i bordi per aggiustarlo, oppure scrivi inizio e fine (es. 1:23.50).
+  Trascina sulla forma d'onda: la zona evidenziata e' il loop.
+  Trascina i bordi per aggiustarlo, oppure usa i pulsanti - e + accanto
+  a inizio e fine (spostano di un beat alla volta).
+  Sotto la forma d'onda c'e' la panoramica di tutto il brano:
+  toccala per spostarti, trascina il riquadro per scorrere quando sei in zoom.
 
 - LOOP E VELOCITA'
   Premi Play: il passaggio si ripete da solo.
-  Con il cursore "Velocita'" rallenti fino a 0.1x.
+  Rallenta con - / + nella barra dei comandi o con il cursore "Velocita'".
   "Mantieni intonazione" fa si' che rallentando il brano non diventi piu' grave.
 
-- RECENTI
-  Il pulsante "Recenti" riapre al volo i brani gia' usati.
+
+4. TEMPO (BPM) E GRIGLIA DEI BEAT
+---------------------------------
+Quando carichi un brano il looper calcola i BPM e disegna la griglia:
+linee sui beat e numeri sulle battute. La selezione si "aggancia" ai beat
+(su computer tieni premuto Alt per disattivarlo al volo).
+- Se la griglia va al doppio o alla meta' del tempo giusto: premi /2 o x2.
+- Se i BPM sono sbagliati: premi "Tap" a tempo con la musica (almeno 4 volte)
+  oppure scrivili a mano.
+- "Il beat 1 e' qui": sposta la griglia in modo che la battuta inizi
+  dove si trova ora la testina rossa.
+- Funziona meglio con brani a tempo costante (batteria, pop, rock...).
+  Con brani liberi o jazz molto veloce controlla e correggi con Tap.
 
 
-3. FUNZIONI UTILI PER LO STUDIO
+5. FUNZIONI UTILI PER LO STUDIO
 -------------------------------
+- PRIMA DI RIPARTIRE: scegli "conteggio di 1 (o 2) battute": prima di ogni
+  ripetizione senti i click a tempo, che seguono i BPM del brano e la velocita'
+  a cui stai suonando. Il primo click di ogni battuta e' piu' acuto.
 - SEZIONI: seleziona un passaggio e premi "+ Salva sezione" (Intro, Assolo...).
-  Le ritrovi con un clic o con i tasti 1-9, anche nei giorni successivi.
-- ZOOM: pulsanti sopra la forma d'onda (o Ctrl + rotella) per i passaggi brevi.
-- PAUSA TRA LE RIPETIZIONI: qualche secondo di pausa o 4 click di conteggio
-  prima che il loop riparta, per riposizionare le mani.
-- ALLENATORE DI VELOCITA': parte lento (es. 60%) e accelera da solo
-  ogni N ripetizioni fino alla velocita' che vuoi.
+  Le ritrovi con un clic (o con i tasti 1-9), anche nei giorni successivi.
+- ALLENATORE DI VELOCITA': scegli partenza (es. 70%) e obiettivo (100%),
+  il ritmo di aumento (Graduale, Normale, Veloce) e premi "Avvia allenamento":
+  a ogni ripetizione la velocita' sale da sola. La barra mostra a che punto sei.
 - TONALITA' E SUONO: trasponi di semitoni (es. per il capotasto),
   accordatura fine, bassi/medi/alti, voce ridotta, solo bassi, senza bassi,
   un solo canale.
 
 
-4. TASTI RAPIDI
----------------
+6. SU TELEFONO E TABLET
+-----------------------
+- Un dito sulla forma d'onda per selezionare, due dita per lo zoom.
+- La barra in basso (Play, Stop, Loop, velocita') resta sempre a portata di mano.
+
+
+7. TASTI RAPIDI (computer)
+--------------------------
   Spazio ............ play / pausa
   A / B ............. imposta inizio / fine del loop dove sei ora
   L ................. loop si' / no
+  T ................. tap tempo
   1 - 9 ............. richiama una sezione salvata
   frecce sx / dx .... indietro / avanti di 2 secondi
   + / - ............. velocita' su / giu'
@@ -69,20 +100,19 @@ Se il browser non si apre da solo, vai all'indirizzo:
   PagSu  / freccia su .... ricomincia il passaggio
 
 
-5. SE QUALCOSA NON VA
+8. SE QUALCOSA NON VA
 ---------------------
-- Un link non si carica:
+- Un link non si carica (Windows):
   YouTube cambia spesso; aggiorna lo scaricatore aprendo il Prompt dei comandi
   nella cartella e scrivendo:   bin\yt-dlp.exe -U
 - "Server non raggiungibile": hai chiuso la finestra nera. Riavvia avvia-looper.bat.
 - "Porta gia' in uso": il looper e' gia' aperto in un'altra finestra.
 - L'antivirus segnala bin\yt-dlp.exe: e' un programma open source molto diffuso
   (github.com/yt-dlp/yt-dlp), a volte segnalato per errore.
-- Mac o senza Windows: apri direttamente looper.html nel browser.
-  Funzionano i file dal computer, ma non i link ne' i Recenti.
 
-I brani scaricati o aperti restano nella cartella "cache":
-puoi svuotarla quando vuoi (o usare la X nei Recenti).
+I brani recenti, le sezioni e i BPM restano salvati nel browser del dispositivo
+(fino a 40 brani). Su Windows i brani scaricati dai link restano anche nella
+cartella "cache": puoi svuotarla quando vuoi.
 
 Nota: scaricare audio da YouTube e' contrario ai suoi termini d'uso;
 usa il looper per lo studio personale.
