@@ -133,6 +133,37 @@
 
     if (!(top.score > 0) || !(top.mean > 0)) return null;   // silenzio o nessun attacco
 
+    // 4b) il brano è "a tempo fisso"? (quantizzato: la griglia cade sugli attacchi per tutto il brano)
+    // blocchi di 16 beat: in ognuno, per ogni beat si cerca l'attacco più forte entro ±1/4 di beat
+    // dalla linea della griglia; il blocco è a tempo se lo scarto mediano (con segno: la griglia resta
+    // allineata, anche se hi-hat e riempimenti spostano qualche attacco) è piccolo e sulla griglia
+    // ci sono davvero più attacchi che altrove (salienza)
+    const steady = (() => {
+      const Pq = lagOf(top.bpm), half = Math.floor(Pq / 4), tol = 0.03 / hopSec;
+      let good = 0, total = 0;
+      for (let k0 = 0; ; k0 += 16) {
+        if (top.phase + (k0 + 16) * Pq + half >= N - 2) break;
+        const devs = [];
+        let on = 0, all = 0, cnt = 0;
+        for (let k = k0; k < k0 + 16; k++) {
+          const c = Math.round(top.phase + k * Pq);
+          let bi = c, bv = -1;
+          for (let i = c - half; i <= c + half; i++) if (i > 0 && O[i] > bv) { bv = O[i]; bi = i; }
+          if (bv > 0) devs.push(bi - c);
+          on += at(c);
+        }
+        for (let d = 0; d < Pq; d += 2) {
+          for (let k = k0; k < k0 + 16; k++) all += at(Math.round(top.phase + k * Pq + d));
+          cnt++;
+        }
+        const sal = all > 0 ? on / (all / cnt) : 0;
+        devs.sort((p, q) => p - q);
+        const med = devs.length ? devs[devs.length >> 1] : Infinity;
+        if (sal > 0) { total++; if (Math.abs(med) <= tol && sal >= 1.3) good++; }
+      }
+      return total ? good / total : 0;
+    })();
+
     // 5) beat 1 della battuta: il beat con più energia nei bassi subito dopo l'attacco (4/4)
     const P = lagOf(top.bpm), win = Math.max(2, Math.round(0.06 / hopSec));
     let bestJ = 0, bestJS = -1;
@@ -151,6 +182,7 @@
       bpm: Math.round(top.bpm * 100) / 100,
       offset,
       confidence: top.mean > 0 ? top.score / top.mean : 0,
+      steady,
     };
   }`;
 
@@ -179,7 +211,7 @@
     return { x, sr: sr0 / dec };
   }
 
-  /** Restituisce {bpm, offset (s, inizio di una battuta), confidence} oppure null */
+  /** Restituisce {bpm, offset (s, inizio di una battuta), confidence, steady (0–1: quanto il tempo è fisso)} oppure null */
   L.detectTempo = buffer => new Promise(resolve => {
     const { x, sr } = prepare(buffer);
     const fallback = () => setTimeout(() => {

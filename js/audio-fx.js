@@ -272,6 +272,17 @@
   $('iso').addEventListener('change', withGraph(applyIso));
   ['eqLow', 'eqMid', 'eqHigh'].forEach(id => $(id).addEventListener('input', withGraph(applyEq)));
   ['semi', 'cents'].forEach(id => $(id).addEventListener('input', withGraph(applyShift)));
+  // fader del mixer: doppio clic o doppio tocco riporta al valore iniziale
+  document.querySelectorAll('input.vfader').forEach(el => {
+    const reset = () => { el.value = el.dataset.def; el.dispatchEvent(new Event('input')); };
+    el.addEventListener('dblclick', reset);
+    let lastTap = 0;
+    el.addEventListener('pointerup', e => {
+      if (e.pointerType !== 'touch') return;
+      const now = performance.now();
+      if (now - lastTap < 320) { reset(); lastTap = 0; } else lastTap = now;
+    });
+  });
   $('fade').addEventListener('change', () => { L.store.set('fade', $('fade').checked); resetFade(); });
   $('soundReset').addEventListener('click', () => {
     ['semi', 'cents', 'eqLow', 'eqMid', 'eqHigh'].forEach(id => { $(id).value = 0; });

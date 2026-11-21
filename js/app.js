@@ -6,6 +6,7 @@
 
   let objectUrl = null, prevTime = 0, songKey = null, sections = [];
   let loopCount = 0, waiting = false, waitTimer = null, fadingOut = false, tempoToken = 0;
+  let gridMeta = { steady: null, show: true };   // per brano: quanto è regolare il tempo e se la griglia è visibile
 
   // ======================================================================
   // Caricamento brano
@@ -16,6 +17,7 @@
   async function loadSong(file, opts = {}) {
     if (!file) return;
     stopWaiting();
+    if (L.trainer.active) L.trainer.stop();
     audio.pause();
     if (objectUrl) URL.revokeObjectURL(objectUrl);
     objectUrl = URL.createObjectURL(file);
@@ -28,6 +30,9 @@
     $('placeholder').textContent = 'Caricamento…';
     $('placeholder').hidden = false;
     S.region = null; S.duration = 0; S.view = { start: 0, end: 0 }; S.grid = null;
+    gridMeta = { steady: null, show: true };
+    $('gridShow').checked = S.gridShow = true;
+    setNote('');
     L.wave.setBuffer(null);
     resetLoopCount();
     loadSections();
@@ -191,39 +196,69 @@
     }
   }
 
-  const closeRecent = () => { recentPanel.hidden = true; };
-  recentBtn.addEventListener('click', e => {
-    e.stopPropagation();
-    recentPanel.hidden = !recentPanel.hidden;
-    if (!recentPanel.hidden) renderRecent();
-  });
-  document.addEventListener('click', e => {
-    if (!recentPanel.hidden && !recentPanel.contains(e.target) && e.target !== recentBtn) closeRecent();
-  });
+  // menu a comparsa: uno aperto alla volta, si chiudono cliccando fuori o con Esc
+  const popovers = [];
+  function popover(btn, panel, onOpen) {
+    const close = () => { panel.hidden = true; };
+    popovers.push(close);
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const open = panel.hidden;
+      popovers.forEach(c => c());
+      panel.hidden = !open;
+      if (open && onOpen) onOpen();
+    });
+    document.addEventListener('click', e => {
+      if (!panel.hidden && !panel.contains(e.target) && !btn.contains(e.target)) close();
+    });
+    return close;
+  }
+  const closeAllPopovers = () => popovers.forEach(c => c());
+  const closeRecent = popover(recentBtn, recentPanel, renderRecent);
+  popover($('gridBtn'), $('gridPanel'));
   $('openCache').addEventListener('click', () => { L.api('/api/open-cache', { method: 'POST' }).catch(e => alert(L.netError(e))); });
 
   // ======================================================================
   // Tempo: BPM, griglia, tap
   // ======================================================================
+  function setNote(t) { const n = $('bpmNote'); n.textContent = t; n.title = t; }
+  const STEADY_MIN = 0.6;    // sotto questa soglia il brano non sembra quantizzato: griglia nascosta
+
+  function applyGridShow(show) {
+    gridMeta.show = S.gridShow = $('gridShow').checked = !!show;
+    L.wave.invalidate();
+  }
+
   async function loadTempo(buffer) {
     const token = ++tempoToken;
     updateTempoUi();
     const saved = store.get('tempo:' + songKey, null);
-    if (saved && saved.bpm) {
+    // i tempi rilevati dalla v2.0 non sapevano se il brano è a tempo fisso: si rianalizzano
+    if (saved && saved.bpm && (saved.steady != null || !saved.detected)) {
+      gridMeta.steady = saved.steady != null ? saved.steady : null;
+      applyGridShow(saved.show != null ? saved.show : store.get('gridShow', true));
       setGrid(saved, false);
-      $('bpmNote').textContent = saved.detected ? '(rilevato)' : '';
+      setNote(!S.gridShow ? 'griglia nascosta (attivala da Griglia ▾)' : saved.detected ? '(rilevato)' : '');
       return;
     }
-    $('bpmNote').textContent = 'analisi in corso…';
+    setNote('analisi in corso…');
     const r = await L.detectTempo(buffer);
     if (token !== tempoToken) return;
     if (!r || !r.bpm) {
-      $('bpmNote').textContent = 'non rilevato: usa Tap';
+      setNote('non rilevato: usa Tap');
       updateTempoUi();
       return;
     }
+    const regular = r.steady >= STEADY_MIN && r.confidence >= 2;
+    gridMeta.steady = Math.round(r.steady * 100) / 100;
+    applyGridShow(regular);
     setGrid({ bpm: r.bpm, offset: r.offset, beatsPerBar: 4, detected: true }, true);
-    $('bpmNote').textContent = r.confidence < 3 ? '(rilevato, da verificare)' : '(rilevato)';
+    setNote(!regular ? 'tempo non regolare: griglia nascosta (attivala da Griglia ▾)'
+      : r.confidence < 3 ? '(rilevato, da verificare)' : '(rilevato)');
+  }
+
+  function saveTempo(detected) {
+    if (songKey && S.grid) store.set('tempo:' + songKey, { ...S.grid, detected: !!detected, steady: gridMeta.steady, show: gridMeta.show });
   }
 
   function setGrid(g, save = true) {
@@ -231,7 +266,7 @@
       const bpb = g.beatsPerBar || 4, bar = 60 / g.bpm * bpb;
       let off = g.offset % bar; if (off < 0) off += bar;
       S.grid = { bpm: Math.round(g.bpm * 100) / 100, offset: off, beatsPerBar: bpb };
-      if (save && songKey) store.set('tempo:' + songKey, { ...S.grid, detected: !!g.detected });
+      if (save) saveTempo(g.detected);
     } else {
       S.grid = null;
     }
@@ -253,12 +288,12 @@
     const v = parseFloat(String(e.target.value).replace(',', '.'));
     if (!(v >= 20 && v <= 300)) { updateTempoUi(); return; }
     setGrid(S.grid ? { ...S.grid, bpm: v } : { bpm: v, offset: 0, beatsPerBar: +$('meter').value || 4 });
-    $('bpmNote').textContent = '';
+    setNote('');
   }
   $('bpm').addEventListener('change', onBpmInput);
   $('bpm2').addEventListener('change', onBpmInput);
-  $('bpmX2').addEventListener('click', () => { if (S.grid && S.grid.bpm * 2 <= 300) { setGrid({ ...S.grid, bpm: S.grid.bpm * 2 }); $('bpmNote').textContent = ''; } });
-  $('bpmHalf').addEventListener('click', () => { if (S.grid && S.grid.bpm / 2 >= 20) { setGrid({ ...S.grid, bpm: S.grid.bpm / 2 }); $('bpmNote').textContent = ''; } });
+  $('bpmX2').addEventListener('click', () => { if (S.grid && S.grid.bpm * 2 <= 300) { setGrid({ ...S.grid, bpm: S.grid.bpm * 2 }); setNote(''); } });
+  $('bpmHalf').addEventListener('click', () => { if (S.grid && S.grid.bpm / 2 >= 20) { setGrid({ ...S.grid, bpm: S.grid.bpm / 2 }); setNote(''); } });
   $('meter').addEventListener('change', () => {
     if (S.grid) setGrid({ ...S.grid, beatsPerBar: +$('meter').value });
   });
@@ -267,24 +302,31 @@
     setGrid({ ...S.grid, offset: audio.currentTime });
   });
 
+  // il pulsante ha larghezza fissa e la nota sta dopo: niente si sposta mentre batti
   let tapReset = null;
   function tap() {
     if (!S.duration) return;
     const r = L.tap();
     const btn = $('tapBtn');
-    btn.textContent = 'Tap (' + r.count + ')';
+    btn.textContent = r.count < 4 ? 'Tap ' + r.count + '/4' : 'Tap ✓';
     clearTimeout(tapReset);
     tapReset = setTimeout(() => { btn.textContent = 'Tap'; }, 2200);
-    if (!r.bpm) { $('bpmNote').textContent = 'continua a battere…'; return; }
+    if (!r.bpm) { setNote('continua a battere…'); return; }
     const playing = !audio.paused;
     const bpm = playing ? r.bpm / audio.playbackRate : r.bpm;     // BPM del brano, non della velocità attuale
     const offset = playing ? audio.currentTime - 0.05 * audio.playbackRate : (S.grid ? S.grid.offset : 0);
     setGrid({ bpm: Math.round(bpm * 10) / 10, offset, beatsPerBar: S.grid ? S.grid.beatsPerBar : (+$('meter').value || 4) });
-    $('bpmNote').textContent = '(da Tap)';
+    setNote(S.gridShow ? '(da Tap)' : '(da Tap) · griglia nascosta');
   }
-  $('tapBtn').addEventListener('click', tap);
+  // il tap conta alla pressione (più preciso, senza il ritardo del tocco); il click solo da tastiera
+  $('tapBtn').addEventListener('pointerdown', e => { if (e.button === 0) { e.preventDefault(); tap(); } });
+  $('tapBtn').addEventListener('click', e => { if (e.detail === 0) tap(); });
 
-  $('gridShow').addEventListener('change', () => { S.gridShow = $('gridShow').checked; store.set('gridShow', S.gridShow); L.wave.invalidate(); });
+  $('gridShow').addEventListener('change', () => {
+    applyGridShow($('gridShow').checked);
+    saveTempo((store.get('tempo:' + songKey, null) || {}).detected);
+    if (S.grid) setNote(S.gridShow ? '' : 'griglia nascosta');
+  });
   $('snap').addEventListener('change', () => { S.snap = $('snap').checked; store.set('snap', S.snap); });
 
   // ======================================================================
@@ -335,7 +377,8 @@
     const R = S.region;
     if (!R) return;
     const t = edge === 'start' ? R.start : R.end;
-    let t2 = S.grid ? L.stepBeat(S.grid, t, dir) : t + dir * 0.05;
+    const g = S.gridShow ? S.grid : null;      // a beat solo se la griglia è visibile
+    let t2 = g ? L.stepBeat(g, t, dir) : t + dir * 0.05;
     t2 = clamp(t2, 0, S.duration);
     if (edge === 'start' && t2 < R.end - 0.05) setRegion(t2, R.end);
     if (edge === 'end' && t2 > R.start + 0.05) setRegion(R.start, t2);
@@ -619,7 +662,7 @@
     if (tag === 'select' || tag === 'textarea') return;
     if (tag === 'input' && t.type !== 'checkbox' && t.type !== 'range') return;
     if (e.ctrlKey || e.metaKey || e.altKey) return;
-    if (e.key === 'Escape') { closeRecent(); return; }
+    if (e.key === 'Escape') { closeAllPopovers(); return; }
     if (!S.duration) return;
     switch (e.key) {
       case ' ': case 'PageDown': case 'ArrowDown': e.preventDefault(); togglePlay(); break;
@@ -653,7 +696,8 @@
   };
 
   document.querySelectorAll('details[data-key]').forEach(d => {
-    d.open = !!store.get('open:' + d.dataset.key, false);
+    const def = d.dataset.default === 'open' || (d.dataset.default === 'wide' && innerWidth > 700);
+    d.open = !!store.get('open:' + d.dataset.key, def);
     d.addEventListener('toggle', () => store.set('open:' + d.dataset.key, d.open));
   });
 
@@ -666,7 +710,6 @@
   $('pauseMode').value = pm;
   if (!$('pauseMode').value) $('pauseMode').value = 'none';
   $('countFirst').checked = store.get('countFirst', true);
-  S.gridShow = $('gridShow').checked = store.get('gridShow', true);
   S.snap = $('snap').checked = store.get('snap', true);
 
   applyPitchPreserve();

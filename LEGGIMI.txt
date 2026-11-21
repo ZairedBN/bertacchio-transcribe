@@ -48,22 +48,29 @@ Se il browser non si apre da solo, vai all'indirizzo:  http://localhost:8765
 
 - LOOP E VELOCITA'
   Premi Play: il passaggio si ripete da solo.
-  Rallenta con - / + nella barra dei comandi o con il cursore "Velocita'".
+  Rallenta con - / + nella barra dei comandi o nel riquadro "Velocita' e allenatore".
   "Mantieni intonazione" fa si' che rallentando il brano non diventi piu' grave.
+
+- MIXER
+  Sul computer sta a destra (su telefono e tablet sotto il passaggio):
+  cursori verticali per Volume, Bassi, Medi e Alti.
+  Doppio clic (o doppio tocco) su un cursore lo riporta a zero.
 
 
 4. TEMPO (BPM) E GRIGLIA DEI BEAT
 ---------------------------------
-Quando carichi un brano il looper calcola i BPM e disegna la griglia:
-linee sui beat e numeri sulle battute. La selezione si "aggancia" ai beat
-(su computer tieni premuto Alt per disattivarlo al volo).
-- Se la griglia va al doppio o alla meta' del tempo giusto: premi /2 o x2.
-- Se i BPM sono sbagliati: premi "Tap" a tempo con la musica (almeno 4 volte)
-  oppure scrivili a mano.
-- "Il beat 1 e' qui": sposta la griglia in modo che la battuta inizi
-  dove si trova ora la testina rossa.
-- Funziona meglio con brani a tempo costante (batteria, pop, rock...).
-  Con brani liberi o jazz molto veloce controlla e correggi con Tap.
+Quando carichi un brano il looper calcola i BPM e, se il brano e' a tempo fisso
+(batteria, pop, rock, rap...), disegna la griglia: linee sui beat e numeri sulle
+battute. La selezione si "aggancia" ai beat (su computer tieni premuto Alt per
+disattivarlo al volo).
+- Se il tempo non e' regolare (jazz, rubato, brani suonati dal vivo senza click)
+  la griglia parte NASCOSTA e la selezione non si aggancia: i BPM restano
+  comunque per il conteggio. Puoi mostrarla dal menu "Griglia".
+- Nel menu "Griglia": mostra/nascondi, aggancio ai beat, /2 e x2 (se la griglia
+  va al doppio o alla meta' del tempo giusto), "Il beat 1 e' qui" (la battuta
+  inizia dove si trova ora la testina) e il tempo in chiave.
+- Se i BPM sono sbagliati: premi "Tap" a tempo con la musica (almeno 4 volte,
+  il pulsante conta 1/4, 2/4...) oppure scrivili a mano.
 
 
 5. FUNZIONI UTILI PER LO STUDIO
@@ -73,12 +80,11 @@ linee sui beat e numeri sulle battute. La selezione si "aggancia" ai beat
   a cui stai suonando. Il primo click di ogni battuta e' piu' acuto.
 - SEZIONI: seleziona un passaggio e premi "+ Salva sezione" (Intro, Assolo...).
   Le ritrovi con un clic (o con i tasti 1-9), anche nei giorni successivi.
-- ALLENATORE DI VELOCITA': scegli partenza (es. 70%) e obiettivo (100%),
+- ALLENATORE DI VELOCITA' (nel riquadro "Velocita' e allenatore"): scegli partenza (es. 70%) e obiettivo (100%),
   il ritmo di aumento (Graduale, Normale, Veloce) e premi "Avvia allenamento":
   a ogni ripetizione la velocita' sale da sola. La barra mostra a che punto sei.
-- TONALITA' E SUONO: trasponi di semitoni (es. per il capotasto),
-  accordatura fine, bassi/medi/alti, voce ridotta, solo bassi, senza bassi,
-  un solo canale.
+- NEL MIXER: "Ascolta" (voce ridotta, solo bassi, senza bassi, un solo canale)
+  e "Tonalita'": trasponi di semitoni (es. per il capotasto) e accordatura fine.
 
 
 6. SU TELEFONO E TABLET

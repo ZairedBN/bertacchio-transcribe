@@ -237,7 +237,7 @@
   // ======================================================================
   function snap(t, e, touch) {
     const g = S.grid;
-    if (!g || !S.snap || (e && e.altKey)) return t;
+    if (!g || !S.snap || !S.gridShow || (e && e.altKey)) return t;
     const bt = L.nearestBeat(g, t);
     const tol = (touch ? 16 : 10) / pxPerSec();
     return Math.abs(bt - t) <= tol ? clamp(bt, 0, S.duration) : t;

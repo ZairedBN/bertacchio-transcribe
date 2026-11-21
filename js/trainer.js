@@ -133,7 +133,7 @@
   }
 
   L.trainer = {
-    onLoop, onSectionChange, updateUi,
+    onLoop, onSectionChange, updateUi, stop,
     get active() { return T.active; },
   };
 })(window.Looper);
