@@ -9,6 +9,7 @@
     view: { start: 0, end: 0 },
     grid: null,            // {bpm, offset, beatsPerBar}
     gridShow: true, snap: true,
+    sections: [],          // sezioni salvate del brano (per disegnarle)
   };
 
   const audio = $('audio');
@@ -177,7 +178,44 @@
       c.fillStyle = L.colors.wave; c.fill(pOut);
       c.fillStyle = L.colors['wave-active']; c.fill(pIn);
     }
+    drawSectionStrip(c, W, H);
     dirty = false;
+  }
+
+  /** striscia colorata in basso con i nomi delle sezioni salvate */
+  function drawSectionStrip(c, W, H) {
+    const secs = S.sections;
+    if (!secs || !secs.length) return;
+    const d = dpr(), sh = 16 * d, y = H - sh;
+    c.save();
+    c.font = `600 ${11 * d}px system-ui, sans-serif`;
+    c.textBaseline = 'middle';
+    secs.forEach((sec, i) => {
+      const x1 = Math.max(0, timeToX(sec.start)), x2 = Math.min(W, timeToX(sec.end));
+      if (x2 <= x1) return;
+      const col = L.sectionColor(i);
+      c.fillStyle = L.alpha(col, 0.9);
+      c.fillRect(x1, y, Math.max(2 * d, x2 - x1 - d), sh);
+      const label = (i < 9 ? (i + 1) + ' ' : '') + sec.name;
+      const room = x2 - x1 - 8 * d;
+      if (room > 14 * d) {
+        c.save();
+        c.beginPath(); c.rect(x1, y, x2 - x1, sh); c.clip();
+        c.fillStyle = '#fff';
+        c.fillText(label, x1 + 5 * d, y + sh / 2 + 0.5 * d);
+        c.restore();
+      }
+    });
+    c.restore();
+  }
+  const OV_BAND = 6;   // altezza (px CSS) delle bande delle sezioni nella panoramica
+  function sectionAtOverview(clientX, clientY) {
+    const secs = S.sections;
+    if (!secs || !secs.length) return -1;
+    const r = ov.getBoundingClientRect();
+    if (clientY < r.bottom - OV_BAND - 8) return -1;     // tocco comodo: banda + margine
+    const t = ovTime(clientX), tol = 4 / r.width * S.duration;
+    return secs.findIndex(s => t >= s.start - tol && t <= s.end + tol);
   }
 
   function drawOverviewStatic() {
@@ -220,6 +258,13 @@
     if (ovDirty) drawOverviewStatic();
     if (R) { octx.fillStyle = L.colors.region; octx.fillRect(ox(R.start), 0, Math.max(1, ox(R.end) - ox(R.start)), OH); }
     octx.drawImage(ovStat, 0, 0);
+    if (S.sections && S.sections.length) {
+      const bh = OV_BAND * d;
+      S.sections.forEach((sec, i) => {
+        octx.fillStyle = L.sectionColor(i);
+        octx.fillRect(ox(sec.start), OH - bh, Math.max(2 * d, ox(sec.end) - ox(sec.start) - d), bh);
+      });
+    }
     if (isZoomed()) {
       const x1 = ox(S.view.start), x2 = ox(S.view.end);
       octx.fillStyle = L.colors.view;
@@ -388,7 +433,9 @@
   ov.addEventListener('pointerup', e => {
     if (!ovDrag) return;
     if (!ovDrag.moved) {
-      const t = ovTime(e.clientX);
+      const t = ovTime(e.clientX), si = sectionAtOverview(e.clientX, e.clientY);
+      ovDrag = null;
+      if (si >= 0 && hooks.recallSection) { hooks.recallSection(si); return; }
       hooks.seek(t);
       if (isZoomed() && (t < S.view.start || t > S.view.end)) setView(t - span() * 0.3, span());
     }

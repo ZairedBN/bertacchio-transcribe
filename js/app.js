@@ -34,6 +34,7 @@
     $('gridShow').checked = S.gridShow = true;
     setNote('');
     L.wave.setBuffer(null);
+    L.fx.setBufferInfo(null);
     resetLoopCount();
     loadSections();
     updateTempoUi();
@@ -58,6 +59,7 @@
       S.duration = buffer.duration;
       S.view = { start: 0, end: S.duration };
       L.wave.setBuffer(buffer);
+      L.fx.setBufferInfo(buffer);
       $('placeholder').hidden = true;
     } catch {
       $('placeholder').textContent = 'Impossibile leggere la forma d\'onda (il brano potrebbe comunque essere riproducibile).';
@@ -412,11 +414,13 @@
       if (R && R.end - R.start < 0.05) clearRegion();
       else if (R && inLoopMode() && !audio.paused && (audio.currentTime < R.start || audio.currentTime > R.end)) seek(R.start);
     },
+    recallSection: i => recallSection(i),
   });
 
   // ======================================================================
   // Sezioni salvate
   // ======================================================================
+  const fmtShort = t => { const m = Math.floor(t / 60); return m + ':' + (t - m * 60).toFixed(1).padStart(4, '0'); };
   function loadSections() {
     sections = songKey ? store.get('sections:' + songKey, []) : [];
     if (!Array.isArray(sections)) sections = [];
@@ -427,6 +431,8 @@
   function renderChips() {
     const box = $('chips');
     box.innerHTML = '';
+    S.sections = sections;
+    L.wave.invalidate();
     if (!sections.length) {
       const s = document.createElement('span');
       s.className = 'muted';
@@ -438,12 +444,22 @@
     sections.forEach((sec, i) => {
       const chip = document.createElement('span');
       chip.className = 'chip';
+      chip.style.setProperty('--c', L.sectionColorVar(i));
       if (R && Math.abs(R.start - sec.start) < 0.01 && Math.abs(R.end - sec.end) < 0.01) chip.classList.add('on');
       const name = document.createElement('button');
       name.className = 'name';
-      name.textContent = sec.name;
-      if (i < 9) { const k = document.createElement('small'); k.textContent = i + 1; name.append(k); }
-      name.title = fmt(sec.start) + ' → ' + fmt(sec.end) + ' · ' + sec.speed.toFixed(2) + '× (doppio clic per rinominare)';
+      const key = document.createElement('span');
+      key.className = 'key';
+      key.textContent = i < 9 ? i + 1 : '·';
+      const txt = document.createElement('span');
+      txt.className = 'txt';
+      const strong = document.createElement('strong');
+      strong.textContent = sec.name;
+      const small = document.createElement('small');
+      small.textContent = fmtShort(sec.start) + ' – ' + fmtShort(sec.end) + ' · ' + Math.round(sec.speed * 100) + '%';
+      txt.append(strong, small);
+      name.append(key, txt);
+      name.title = 'Clic per richiamarla' + (i < 9 ? ' (tasto ' + (i + 1) + ')' : '') + ' · doppio clic per rinominare';
       name.addEventListener('click', () => recallSection(i));
       name.addEventListener('dblclick', () => {
         const n = prompt('Nuovo nome della sezione:', sec.name);

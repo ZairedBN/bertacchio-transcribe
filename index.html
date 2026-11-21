@@ -31,6 +31,9 @@
     --danger: #b42318;
     --ok: #1a7f4b;
     --shadow: 0 8px 28px rgba(30, 20, 25, .16);
+    /* colori delle sezioni salvate */
+    --sec1: #2f6fdb; --sec2: #16916a; --sec3: #d9772b; --sec4: #8a46c9;
+    --sec5: #c2185b; --sec6: #0f8fa0; --sec7: #a8861a; --sec8: #5d6b7a;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -54,6 +57,8 @@
       --danger: #ff8a80;
       --ok: #4cc38a;
       --shadow: 0 8px 28px rgba(0, 0, 0, .5);
+      --sec1: #4f86e8; --sec2: #23a57b; --sec3: #e0863c; --sec4: #9c5cd8;
+      --sec5: #d63d74; --sec6: #1ea3b5; --sec7: #b8962a; --sec8: #74828f;
     }
   }
   * { box-sizing: border-box; }
@@ -206,14 +211,30 @@
   .speed-mini span { min-width: 54px; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
 
   /* sezioni */
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; min-width: 0; }
-  .chip { display: inline-flex; align-items: center; border: 1px solid var(--border); background: var(--chip); border-radius: 999px; overflow: hidden; }
-  .chip.on { border-color: var(--accent); }
-  .chip button { border: 0; background: transparent; border-radius: 0; padding: 4px 4px 4px 12px; font-size: 14px; }
-  .chip.on button.name { color: var(--accent); font-weight: 600; }
-  .chip button.x { padding: 4px 10px 4px 6px; color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; flex: 1 1 100%; min-width: 0; margin-top: 2px; }
+  .chip {
+    --c: var(--sec1);
+    display: inline-flex; align-items: stretch; min-width: 0; max-width: 100%;
+    border: 1px solid var(--border); border-left: 6px solid var(--c); border-radius: 10px;
+    background: var(--panel); box-shadow: 0 1px 2px rgba(0, 0, 0, .06); overflow: hidden;
+  }
+  .chip:hover { border-color: var(--c); }
+  .chip button { border: 0; background: transparent; border-radius: 0; color: inherit; }
+  .chip button.name { display: flex; align-items: center; gap: 10px; padding: 6px 4px 6px 10px; text-align: left; min-width: 0; }
+  .chip .key {
+    flex: none; display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 6px;
+    background: var(--c); color: #fff; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
+  }
+  .chip .txt { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
+  .chip .txt strong { font-size: 14px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chip .txt small { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .chip button.x { padding: 4px 10px; color: var(--muted); font-size: 13px; }
   .chip button.x:hover { color: var(--danger); }
-  .chip small { color: var(--muted); font-size: 11px; margin-left: 4px; }
+  .chip.on { background: var(--c); border-color: var(--c); color: #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, .18); }
+  .chip.on .key { background: rgba(255, 255, 255, .25); }
+  .chip.on .txt small, .chip.on button.x { color: rgba(255, 255, 255, .85); }
+  .chip.on button.x:hover { color: #fff; }
+  .chips > .muted { padding: 4px 0; }
   .counter { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 14px; }
   .edge { display: inline-flex; align-items: center; gap: 4px; }
   .ab { display: inline-flex; gap: 8px; flex-wrap: wrap; }
@@ -238,6 +259,16 @@
     writing-mode: vertical-lr; direction: rtl;
     flex: none; min-width: 0; width: 32px; height: 150px; margin: 0; cursor: ns-resize;
   }
+  .ftrack { position: relative; display: block; }
+  /* tacca dello zero: 30 passi su 42 dal basso (cursore da −30 = spento a +12 dB) */
+  .ftrack.zero::before, .ftrack.zero::after {
+    content: ""; position: absolute; width: 7px; height: 2px; background: var(--muted); border-radius: 1px;
+    bottom: calc(8px + (100% - 16px) * 30 / 42 - 1px); pointer-events: none;
+  }
+  .ftrack.zero::before { left: -7px; }
+  .ftrack.zero::after { right: -7px; }
+  .fader.off output { color: var(--danger); font-weight: 600; }
+  .fader.off label { color: var(--muted); text-decoration: line-through; }
   .mixer-tip { text-align: center; margin: 6px 0 0; }
 
   /* allenatore */
@@ -267,12 +298,11 @@
   @media (hover: none) and (pointer: coarse) {
     button, .btn, .toggle, select, input[type=text], input[type=number] { min-height: 44px; }
     button.small { min-height: 36px; padding: 4px 12px; }
-    .chip button { min-height: 36px; }
+    .chip button { min-height: 44px; }
     input[type=range] { height: 32px; }
     input[type=range].vfader { height: 150px; width: 44px; }
     .kbd-hint { display: none; }
     .touch-hint { display: block; }
-    .chip small { display: none; }
   }
   @media (max-width: 700px) {
     main { padding: 12px 12px 110px; }
@@ -338,37 +368,40 @@
         <div class="faders">
           <div class="fader master">
             <output id="volVal">100%</output>
-            <input type="range" class="vfader" id="vol" min="0" max="150" step="1" value="100" data-def="100" aria-label="Volume">
+            <span class="ftrack"><input type="range" class="vfader" id="vol" min="0" max="150" step="1" value="100" data-def="100" aria-label="Volume"></span>
             <label for="vol">Volume</label>
           </div>
           <div class="fader">
             <output id="eqLowVal">0 dB</output>
-            <input type="range" class="vfader" id="eqLow" min="-12" max="12" step="1" value="0" data-def="0" aria-label="Bassi">
+            <span class="ftrack zero"><input type="range" class="vfader" id="eqLow" min="-30" max="12" step="1" value="0" data-def="0" aria-label="Bassi"></span>
             <label for="eqLow">Bassi</label>
           </div>
           <div class="fader">
             <output id="eqMidVal">0 dB</output>
-            <input type="range" class="vfader" id="eqMid" min="-12" max="12" step="1" value="0" data-def="0" aria-label="Medi">
+            <span class="ftrack zero"><input type="range" class="vfader" id="eqMid" min="-30" max="12" step="1" value="0" data-def="0" aria-label="Medi"></span>
             <label for="eqMid">Medi</label>
           </div>
           <div class="fader">
             <output id="eqHighVal">0 dB</output>
-            <input type="range" class="vfader" id="eqHigh" min="-12" max="12" step="1" value="0" data-def="0" aria-label="Alti">
+            <span class="ftrack zero"><input type="range" class="vfader" id="eqHigh" min="-30" max="12" step="1" value="0" data-def="0" aria-label="Alti"></span>
             <label for="eqHigh">Alti</label>
           </div>
         </div>
-        <p class="note mixer-tip">Doppio clic (o doppio tocco) su un cursore per riportarlo a zero.</p>
+        <p class="note mixer-tip">Abbassa del tutto un cursore per spegnere quella banda. Doppio clic (o doppio tocco) lo riporta a zero.</p>
         <div class="row">
           <span class="label">Ascolta</span>
           <select id="iso">
             <option value="normal">tutto il brano</option>
-            <option value="left">solo canale sinistro</option>
-            <option value="right">solo canale destro</option>
-            <option value="novocal">voce ridotta</option>
+            <option value="novocal">voce ridotta (karaoke)</option>
+            <option value="center">solo centro (voce, basso, batteria)</option>
+            <option value="sides">solo lati (chitarre, tastiere)</option>
             <option value="bass">solo bassi</option>
             <option value="nobass">senza bassi</option>
+            <option value="left">solo canale sinistro</option>
+            <option value="right">solo canale destro</option>
           </select>
         </div>
+        <p class="note" id="isoHelp"></p>
         <div class="row">
           <label class="check"><input type="checkbox" id="fade" checked> Dissolvenza ai bordi del loop</label>
         </div>
@@ -496,19 +529,19 @@
         <p class="note" id="countHint"></p>
         <div class="row">
           <span class="label">Sezioni</span>
-          <div class="chips" id="chips"></div>
           <button class="small" id="saveSection" disabled>＋ Salva sezione</button>
+          <div class="chips" id="chips"></div>
         </div>
       </section>
 
       <p class="hint kbd-hint">
-        Trascina sulla forma d'onda per selezionare il passaggio, trascina i bordi per regolarlo, clicca per spostarti.
+        Trascina sulla forma d'onda per selezionare il passaggio, trascina i bordi per regolarlo, clicca per spostarti. Le bande colorate sotto la panoramica sono le sezioni: cliccale per richiamarle.
         <kbd>Ctrl</kbd>+rotella (o pizzico) per lo zoom, <kbd>Alt</kbd> mentre trascini per non agganciarti ai beat.<br>
         Tasti: <kbd>Spazio</kbd> play/pausa (dopo un Tap batte il tempo) · <kbd>A</kbd> / <kbd>B</kbd> inizio/fine · <kbd>L</kbd> loop · <kbd>T</kbd> tap tempo · <kbd>1</kbd>–<kbd>9</kbd> sezioni ·
         <kbd>←</kbd> <kbd>→</kbd> ±2 s · <kbd>+</kbd> <kbd>−</kbd> velocità ·
         pedale/<kbd>PagGiù</kbd> <kbd>↓</kbd> play/pausa · <kbd>PagSu</kbd> <kbd>↑</kbd> ricomincia
       </p>
-      <p class="hint touch-hint">Sul telefono: un dito per selezionare, due dita per lo zoom. Tocca la barra sotto la forma d'onda per spostarti nel brano.</p>
+      <p class="hint touch-hint">Sul telefono: un dito per selezionare, due dita per lo zoom. Tocca la barra sotto la forma d'onda per spostarti nel brano, le bande colorate per richiamare le sezioni.</p>
     </div>
 
     <aside class="side">

@@ -8,6 +8,15 @@ Problemi emersi dopo la v2 (19/11/2026), da sistemare durante la prova insieme a
 - [x] Griglia nascosta di default se il brano non è a tempo fisso (misura `steady` in `js/bpm.js`, soglia 0.6 in `js/app.js`). Brani reali: jazz 0.32–0.36 → nascosta; rap/pop 0.74–1.00 → visibile. La scelta viene salvata per brano.
 - [x] L'allenatore si ferma quando si carica un nuovo brano.
 
+## Fatto il 21/11/2026 (pomeriggio)
+- [x] Logo: colibrì stilizzato.
+- [x] Sezioni: schede colorate (numero, inizio–fine, velocità) e bande colorate su forma d'onda e panoramica (clic = richiama).
+- [x] Mixer:
+  - limitatore e compensazione automatica, così il suono non gracchia più;
+  - Bassi/Medi/Alti diventano un isolatore a 3 bande (250 Hz / 3 kHz, cursore da "spento" a +12 dB);
+  - "Ascolta" con le nuove modalità (solo centro, solo lati, voce ridotta migliorata), cambio senza scatti e avviso per i brani mono.
+- [ ] Da sentire a orecchio su brani veri: il mixer nuovo (soprattutto voce ridotta / solo lati).
+
 ## Bug piccoli
 - [ ] **Frecce ↑/↓ "rubate"** per i pedali (play/pausa e ricomincia): impediscono di scorrere la pagina. Su PC il problema è minore con la nuova disposizione. Valutare di usare solo PagSu/PagGiù (`js/app.js`, gestione tastiera).
 

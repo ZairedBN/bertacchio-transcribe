@@ -1,4 +1,5 @@
-/* Looper — catena audio: isolamento → EQ → trasposizione → dissolvenza → volume, più i click del conteggio */
+/* Looper — catena audio: Ascolta → isolatore a 3 bande → trasposizione → dissolvenza → volume → limitatore,
+   più i click del conteggio */
 (L => {
   'use strict';
   const { $ } = L;
@@ -6,6 +7,11 @@
   L.FADE = 0.025; // secondi
 
   let ac = null, graph = null, clickNodes = [];
+
+  // Q dei filtri passa-basso/passa-alto in Web Audio è in dB: −3,01 dB = Butterworth
+  const BW = -3.0103;
+  const XO = [250, 3000];   // incroci dell'isolatore a 3 bande (Hz)
+  const EQ_OFF = -30;       // posizione più bassa del cursore = banda spenta
 
   // pitch shifter granulare: due prese di ritardo sfasate con dissolvenza incrociata
   const SHIFTER_SRC = `
@@ -51,6 +57,142 @@
     }
     registerProcessor('looper-shifter', ShifterProcessor);`;
 
+  // ======================================================================
+  // Costruzione della catena (funziona anche su un OfflineAudioContext, per i test)
+  // ======================================================================
+  /** due biquad Butterworth in cascata = Linkwitz-Riley 24 dB/ottava */
+  function lr4(c, type, f, keep) {
+    const a = c.createBiquadFilter(), b = c.createBiquadFilter();
+    for (const n of [a, b]) { n.type = type; n.frequency.value = f; n.Q.value = BW; if (keep) keep(n); }
+    a.connect(b);
+    return { input: a, output: b };
+  }
+
+  function softClipCurve() {
+    const n = 4096, curve = new Float32Array(n), k = 0.8;
+    for (let i = 0; i < n; i++) {
+      const x = (i / (n - 1)) * 2 - 1, a = Math.abs(x);
+      const y = a <= k ? a : k + (1 - k) * Math.tanh((a - k) / (1 - k));
+      curve[i] = Math.sign(x) * y;
+    }
+    return curve;
+  }
+
+  function buildGraph(c) {
+    const g = {};
+    g.isoIn = c.createGain();
+    g.isoIn.channelCount = 2;
+    g.isoIn.channelCountMode = 'explicit';
+    g.isoIn.channelInterpretation = 'speakers';
+    g.isoOut = c.createGain();
+    g.isoSlot = null;
+    // isolatore a 3 bande: bassi = LP1·AP2, medi = HP1·LP2, alti = HP1·HP2 → la somma è piatta
+    const lp1 = lr4(c, 'lowpass', XO[0]), hp1 = lr4(c, 'highpass', XO[0]);
+    const lp2 = lr4(c, 'lowpass', XO[1]), hp2 = lr4(c, 'highpass', XO[1]);
+    const ap2 = c.createBiquadFilter(); ap2.type = 'allpass'; ap2.frequency.value = XO[1]; ap2.Q.value = Math.SQRT1_2;
+    g.eqLow = c.createGain(); g.eqMid = c.createGain(); g.eqHigh = c.createGain();
+    g.isoOut.connect(lp1.input); lp1.output.connect(ap2).connect(g.eqLow);
+    g.isoOut.connect(hp1.input);
+    hp1.output.connect(lp2.input); lp2.output.connect(g.eqMid);
+    hp1.output.connect(hp2.input); hp2.output.connect(g.eqHigh);
+    g.pitchIn = c.createGain();
+    for (const k of ['eqLow', 'eqMid', 'eqHigh']) g[k].connect(g.pitchIn);
+    g.shifter = null;
+    g.fade = c.createGain();
+    g.vol = c.createGain();
+    // limitatore + taglio morbido: alzando volume o bande il suono non gracchia
+    g.limiter = c.createDynamicsCompressor();
+    g.limiter.threshold.value = -3; g.limiter.knee.value = 0; g.limiter.ratio.value = 20;
+    g.limiter.attack.value = 0.002; g.limiter.release.value = 0.25;
+    // il compressore del browser aggiunge da solo +1,7 dB ("makeup"): li togliamo per restare a livello
+    g.trim = c.createGain(); g.trim.gain.value = Math.pow(10, -1.7 / 20);
+    g.clip = c.createWaveShaper();
+    g.clip.curve = softClipCurve();
+    g.clip.oversample = '2x';
+    g.pitchIn.connect(g.fade);
+    g.fade.connect(g.vol).connect(g.limiter).connect(g.trim).connect(g.clip).connect(c.destination);
+    return g;
+  }
+
+  /** guadagni delle 3 bande dalla posizione dei cursori (dB; −30 = spenta).
+      Se una banda viene alzata, tutte scendono della stessa quantità: niente saturazione. */
+  function bandGains(vals) {
+    const boost = Math.max(0, vals.eqLow, vals.eqMid, vals.eqHigh);
+    const out = {};
+    for (const k in vals) out[k] = vals[k] <= EQ_OFF ? 0 : Math.pow(10, (vals[k] - boost) / 20);
+    return out;
+  }
+
+  // ---------- modalità "Ascolta" ----------
+  const ISO_HELP = {
+    normal: '',
+    novocal: 'Toglie ciò che sta al centro del mix (di solito la voce). Serve un brano stereo.',
+    center: 'Tiene solo ciò che sta al centro: di solito voce, basso, cassa e rullante.',
+    sides: 'Tiene solo ciò che è aperto a destra e a sinistra (chitarre, tastiere, cori). Serve un brano stereo.',
+    left: 'Solo il canale sinistro, in entrambe le orecchie.',
+    right: 'Solo il canale destro, in entrambe le orecchie.',
+    bass: 'Solo sotto i 250 Hz: basso e cassa.',
+    nobass: 'Toglie tutto sotto i 250 Hz (basso e cassa).',
+  };
+  const STEREO_MODES = ['novocal', 'center', 'sides', 'left', 'right'];
+
+  /** catena di una modalità tra `input` (stereo) e `out`; restituisce i nodi creati */
+  function buildIso(c, mode, input, out) {
+    const nodes = [];
+    const keep = n => (nodes.push(n), n);
+    const gain = v => { const n = keep(c.createGain()); n.gain.value = v; return n; };
+    const filt = (type, f) => lr4(c, type, f, keep);
+    const both = node => {                 // un segnale mono su entrambi i canali
+      const m = gain(1);
+      m.channelCount = 1; m.channelCountMode = 'explicit';
+      const mg = keep(c.createChannelMerger(2));
+      node.connect(m);
+      m.connect(mg, 0, 0); m.connect(mg, 0, 1);
+      mg.connect(out);
+    };
+    const entry = gain(1);                 // primo nodo: è quello da scollegare da `input`
+    input.connect(entry);
+    if (mode === 'left' || mode === 'right') {
+      const sp = keep(c.createChannelSplitter(2));
+      entry.connect(sp);
+      const ch = gain(1);
+      sp.connect(ch, mode === 'left' ? 0 : 1);
+      both(ch);
+    } else if (mode === 'center') {
+      const sp = keep(c.createChannelSplitter(2)), mid = gain(0.5);
+      entry.connect(sp);
+      sp.connect(mid, 0); sp.connect(mid, 1);
+      both(mid);
+    } else if (mode === 'novocal' || mode === 'sides') {
+      // lati = sinistro − destro: ciò che è identico nei due canali (il centro) si annulla
+      const sp = keep(c.createChannelSplitter(2));
+      entry.connect(sp);
+      const side = gain(mode === 'novocal' ? 1.2 : 1), inv = gain(-1);
+      sp.connect(side, 0); sp.connect(inv, 1); inv.connect(side);
+      const hp = filt('highpass', mode === 'novocal' ? 150 : 120);
+      side.connect(hp.input);
+      both(hp.output);
+      if (mode === 'novocal') {
+        // si tengono i bassi del mix e un filo di centro (−15 dB), così non suona vuoto
+        const lp = filt('lowpass', 150);
+        entry.connect(lp.input); lp.output.connect(out);
+        const mid = gain(0.5 * 0.18), midHp = filt('highpass', 150);
+        sp.connect(mid, 0); sp.connect(mid, 1);
+        mid.connect(midHp.input);
+        both(midHp.output);
+      }
+    } else if (mode === 'bass') {
+      const lp = filt('lowpass', XO[0]), mk = gain(1.4);
+      entry.connect(lp.input); lp.output.connect(mk); mk.connect(out);
+    } else if (mode === 'nobass') {
+      const hp = filt('highpass', XO[0]);
+      entry.connect(hp.input); hp.output.connect(out);
+    } else {
+      entry.connect(out);
+    }
+    return { entry, nodes };
+  }
+
   function ensure() {
     if (graph) {
       if (ac.state === 'suspended') ac.resume();
@@ -59,24 +201,8 @@
     try {
       ac = new (window.AudioContext || window.webkitAudioContext)();
       const src = ac.createMediaElementSource(audio);
-      const g = {};
-      g.isoIn = ac.createGain();
-      g.isoIn.channelCount = 2;
-      g.isoIn.channelCountMode = 'explicit';
-      g.isoIn.channelInterpretation = 'speakers';
-      g.isoOut = ac.createGain();
-      g.isoNodes = [];
-      g.eqLow = ac.createBiquadFilter(); g.eqLow.type = 'lowshelf'; g.eqLow.frequency.value = 250;
-      g.eqMid = ac.createBiquadFilter(); g.eqMid.type = 'peaking'; g.eqMid.frequency.value = 1000; g.eqMid.Q.value = 0.9;
-      g.eqHigh = ac.createBiquadFilter(); g.eqHigh.type = 'highshelf'; g.eqHigh.frequency.value = 4000;
-      g.pitchIn = ac.createGain();
-      g.shifter = null;
-      g.fade = ac.createGain();
-      g.vol = ac.createGain();
-      src.connect(g.isoIn);
-      g.isoOut.connect(g.eqLow).connect(g.eqMid).connect(g.eqHigh).connect(g.pitchIn);
-      g.fade.connect(g.vol).connect(ac.destination);
-      graph = g;
+      graph = buildGraph(ac);
+      src.connect(graph.isoIn);
       audio.volume = 1;
       applyIso();
       applyEq();
@@ -90,59 +216,71 @@
     return graph;
   }
 
-  // ---------- isolamento ----------
-  function applyIso() {
-    L.store.set('iso', $('iso').value);
-    if (!graph) return;
-    const g = graph;
-    g.isoIn.disconnect();
-    g.isoNodes.forEach(n => n.disconnect());
-    g.isoNodes = [];
-    const keep = n => (g.isoNodes.push(n), n);
-    const filt = (type, f) => { const b = keep(ac.createBiquadFilter()); b.type = type; b.frequency.value = f; b.Q.value = 0.707; return b; };
+  // ---------- Ascolta (cambio con dissolvenza incrociata: niente scatti) ----------
+  const XFADE = 0.04;
+  let stereoInfo = null;   // null = sconosciuto; true/false dopo il caricamento del brano
+  function updateIsoUi() {
     const mode = $('iso').value;
-
-    if (mode === 'left' || mode === 'right') {
-      const sp = keep(ac.createChannelSplitter(2)), mg = keep(ac.createChannelMerger(2));
-      const ch = mode === 'left' ? 0 : 1;
-      g.isoIn.connect(sp);
-      sp.connect(mg, ch, 0);
-      sp.connect(mg, ch, 1);
-      mg.connect(g.isoOut);
-    } else if (mode === 'novocal') {
-      // sinistro − destro elimina ciò che è al centro (di solito la voce); i bassi vengono conservati a parte
-      const sp = keep(ac.createChannelSplitter(2)), mg = keep(ac.createChannelMerger(2));
-      const inv = keep(ac.createGain()); inv.gain.value = -1;
-      const diff = keep(ac.createGain());
-      const hp = filt('highpass', 180);
-      g.isoIn.connect(sp);
-      sp.connect(diff, 0);
-      sp.connect(inv, 1);
-      inv.connect(diff);
-      diff.connect(hp);
-      hp.connect(mg, 0, 0);
-      hp.connect(mg, 0, 1);
-      mg.connect(g.isoOut);
-      const lp1 = filt('lowpass', 180), lp2 = filt('lowpass', 180);
-      g.isoIn.connect(lp1); lp1.connect(lp2); lp2.connect(g.isoOut);
-    } else if (mode === 'bass') {
-      const a = filt('lowpass', 250), b = filt('lowpass', 250);
-      g.isoIn.connect(a); a.connect(b); b.connect(g.isoOut);
-    } else if (mode === 'nobass') {
-      const a = filt('highpass', 250), b = filt('highpass', 250);
-      g.isoIn.connect(a); a.connect(b); b.connect(g.isoOut);
-    } else {
-      g.isoIn.connect(g.isoOut);
+    let help = ISO_HELP[mode] || '';
+    if (stereoInfo === false && STEREO_MODES.includes(mode)) help = 'Questo brano è mono: questa modalità non ha effetto.';
+    $('isoHelp').textContent = help;
+    for (const o of $('iso').options) {
+      if (!o.dataset.base) o.dataset.base = o.textContent;
+      o.textContent = o.dataset.base + (stereoInfo === false && STEREO_MODES.includes(o.value) ? ' (serve un brano stereo)' : '');
     }
   }
+  function connectIso(g, c, mode) {
+    const now = c.currentTime;
+    const slot = c.createGain();
+    slot.connect(g.isoOut);
+    const built = buildIso(c, mode, g.isoIn, slot);
+    const old = g.isoSlot;
+    g.isoSlot = { slot, ...built };
+    if (!old) { slot.gain.value = 1; return; }
+    slot.gain.setValueAtTime(0, now);
+    slot.gain.linearRampToValueAtTime(1, now + XFADE);
+    old.slot.gain.cancelScheduledValues(now);
+    old.slot.gain.setValueAtTime(old.slot.gain.value, now);
+    old.slot.gain.linearRampToValueAtTime(0, now + XFADE);
+    setTimeout(() => {
+      try { g.isoIn.disconnect(old.entry); } catch { /* già scollegato */ }
+      old.entry.disconnect();
+      old.nodes.forEach(n => n.disconnect());
+      old.slot.disconnect();
+    }, XFADE * 1000 + 100);
+  }
+  function applyIso() {
+    L.store.set('iso', $('iso').value);
+    updateIsoUi();
+    if (graph) connectIso(graph, ac, $('iso').value);
+  }
+  /** dopo il caricamento del brano: è davvero stereo? (molti vecchi brani sono mono) */
+  function setBufferInfo(buffer) {
+    if (!buffer) stereoInfo = null;
+    else if (buffer.numberOfChannels < 2) stereoInfo = false;
+    else {
+      const a = buffer.getChannelData(0), b = buffer.getChannelData(1);
+      const step = Math.max(1, Math.floor(a.length / 200000));
+      let side = 0, mid = 0;
+      for (let i = 0; i < a.length; i += step) { const s = a[i] - b[i], m = a[i] + b[i]; side += s * s; mid += m * m; }
+      stereoInfo = mid > 0 && side / mid > 1e-4;
+    }
+    updateIsoUi();
+  }
 
-  // ---------- equalizzatore ----------
+  // ---------- isolatore a 3 bande ----------
+  const eqText = v => v <= EQ_OFF ? 'spento' : (v > 0 ? '+' : '') + v + ' dB';
+  const eqVals = () => ({ eqLow: +$('eqLow').value, eqMid: +$('eqMid').value, eqHigh: +$('eqHigh').value });
   function applyEq() {
-    const vals = { eqLow: +$('eqLow').value, eqMid: +$('eqMid').value, eqHigh: +$('eqHigh').value };
-    for (const k in vals) $(k + 'Val').textContent = (vals[k] > 0 ? '+' : '') + vals[k] + ' dB';
+    const vals = eqVals();
+    for (const k in vals) {
+      $(k + 'Val').textContent = eqText(vals[k]);
+      $(k).closest('.fader').classList.toggle('off', vals[k] <= EQ_OFF);
+    }
     L.store.set('eq', vals);
     if (!graph) return;
-    for (const k in vals) graph[k].gain.setTargetAtTime(vals[k], ac.currentTime, 0.02);
+    const gains = bandGains(vals);
+    for (const k in gains) graph[k].gain.setTargetAtTime(gains[k], ac.currentTime, 0.02);
   }
 
   // ---------- trasposizione ----------
@@ -254,7 +392,7 @@
       env.gain.setValueAtTime(0.0001, t);
       env.gain.exponentialRampToValueAtTime(0.6, t + 0.002);
       env.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
-      osc.connect(env).connect(ac.destination);
+      osc.connect(env).connect(graph.limiter);
       osc.start(t);
       osc.stop(t + 0.07);
       clickNodes.push(osc);
@@ -301,10 +439,12 @@
   $('iso').value = L.store.get('iso', 'normal');
   if (!$('iso').value) $('iso').value = 'normal';
   $('fade').checked = L.store.get('fade', true);
-  applyVolume(); applyEq(); applyShift();
+  applyVolume(); applyEq(); applyShift(); updateIsoUi();
 
   L.fx = {
-    ensure, fadeIn, fadeOut, resetFade, playClicks, stopClicks,
+    ensure, fadeIn, fadeOut, resetFade, playClicks, stopClicks, setBufferInfo,
     get active() { return !!graph; },
+    // usati dai test con OfflineAudioContext
+    _test: { buildGraph, buildIso, connectIso, bandGains, EQ_OFF },
   };
 })(window.Looper);

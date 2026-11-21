@@ -55,6 +55,11 @@ Se il browser non si apre da solo, vai all'indirizzo:  http://localhost:8765
   Sul computer sta a sinistra; velocita' e allenatore stanno a destra
   (su telefono e tablet si trovano sotto il passaggio):
   cursori verticali per Volume, Bassi, Medi e Alti.
+  Bassi, Medi e Alti dividono il brano in tre bande (sotto 250 Hz, 250-3000 Hz,
+  sopra 3000 Hz): abbassando del tutto un cursore quella banda si SPEGNE
+  (es. spegni bassi e medi per sentire solo piatti e chitarra brillante).
+  Il trattino accanto ai cursori indica lo zero. Alzare non fa gracchiare:
+  il looper abbassa da solo il resto e un limitatore evita la distorsione.
   Doppio clic (o doppio tocco) su un cursore lo riporta a zero.
 
 
@@ -82,12 +87,19 @@ disattivarlo al volo).
   ripetizione senti i click a tempo, che seguono i BPM del brano e la velocita'
   a cui stai suonando. Il primo click di ogni battuta e' piu' acuto.
 - SEZIONI: seleziona un passaggio e premi "+ Salva sezione" (Intro, Assolo...).
-  Le ritrovi con un clic (o con i tasti 1-9), anche nei giorni successivi.
+  Ogni sezione ha il suo colore: compare come scheda (con numero, inizio-fine e
+  velocita') e come banda colorata sotto la forma d'onda. La ritrovi con un clic
+  sulla scheda o sulla banda (o con i tasti 1-9), anche nei giorni successivi.
 - ALLENATORE DI VELOCITA' (nel riquadro "Velocita' e allenatore"): scegli partenza (es. 70%) e obiettivo (100%),
   il ritmo di aumento (Graduale, Normale, Veloce) e premi "Avvia allenamento":
   a ogni ripetizione la velocita' sale da sola. La barra mostra a che punto sei.
-- NEL MIXER: "Ascolta" (voce ridotta, solo bassi, senza bassi, un solo canale)
-  e "Tonalita'": trasponi di semitoni (es. per il capotasto) e accordatura fine.
+- NEL MIXER, "Ascolta":
+    voce ridotta (karaoke) ... toglie cio' che sta al centro (di solito la voce)
+    solo centro .............. voce, basso, cassa e rullante
+    solo lati ................ chitarre, tastiere e cori aperti a destra/sinistra
+    solo bassi / senza bassi, solo canale sinistro / destro
+  Le prime tre funzionano solo con brani stereo (i brani mono vengono segnalati).
+  "Tonalita'": trasponi di semitoni (es. per il capotasto) e accordatura fine.
 
 
 6. SU TELEFONO E TABLET

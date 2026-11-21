@@ -59,8 +59,21 @@ window.Looper = window.Looper || {};
   L.colors = {};
   L.readColors = () => {
     const cs = getComputedStyle(document.documentElement);
-    for (const k of ['wave', 'wave-active', 'region', 'handle', 'playhead', 'grid', 'grid-bar', 'muted', 'accent', 'view'])
+    for (const k of ['wave', 'wave-active', 'region', 'handle', 'playhead', 'grid', 'grid-bar', 'muted', 'accent', 'view', 'panel'])
       L.colors[k] = cs.getPropertyValue('--' + k).trim();
+    L.colors.sec = [];
+    for (let i = 1; i <= L.SECTION_COLORS; i++) L.colors.sec.push(cs.getPropertyValue('--sec' + i).trim());
+  };
+  // ogni sezione salvata ha un colore (si ripetono dopo 8)
+  L.SECTION_COLORS = 8;
+  L.sectionColorVar = i => 'var(--sec' + (i % L.SECTION_COLORS + 1) + ')';
+  L.sectionColor = i => L.colors.sec[i % L.SECTION_COLORS] || L.colors.accent;
+  /** #rrggbb + trasparenza → rgba() */
+  L.alpha = (hex, a) => {
+    const m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
+    if (!m) return hex;
+    const n = parseInt(m[1], 16);
+    return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
   };
 
   // pulsante che ripete l'azione se tenuto premuto
