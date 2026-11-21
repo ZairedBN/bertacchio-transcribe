@@ -79,8 +79,7 @@ disattivarlo al volo).
   inizia dove si trova ora la testina) e il tempo in chiave.
 - Se i BPM sono sbagliati: premi "Tap" a tempo con la musica (almeno 4 volte,
   il pulsante conta 1/4, 2/4...) oppure scrivili a mano.
-  Dopo il primo Tap puoi continuare a battere con la barra spaziatrice;
-  quando smetti per 2 secondi, Spazio torna a fare play/pausa.
+  Da tastiera: premi T a tempo.
 
 
 5. FUNZIONI UTILI PER LO STUDIO
@@ -112,13 +111,24 @@ disattivarlo al volo).
 
 7. TASTI RAPIDI (computer)
 --------------------------
-  Spazio ............ play / pausa  (dopo aver premuto Tap: batte il tempo)
-  A / B ............. imposta inizio / fine del loop dove sei ora
+Premi  ?  (o il pulsante "Tasti" in alto) per vedere l'elenco nel programma.
+Passando il mouse su un pulsante compare a cosa serve e con quale tasto.
+
+  Spazio ............ ricomincia dall'inizio del passaggio (o del brano) e suona
+  P / Invio ......... play / pausa
   L ................. loop si' / no
-  T ................. tap tempo (poi puoi continuare anche con Spazio)
+  + / - ............. velocita' su / giu'      0 ... velocita' normale (100%)
+  frecce sx / dx .... con la griglia: battuta precedente / successiva
+                      senza griglia: inizio o fine di passaggio e sezioni
+  Maiusc + frecce ... indietro / avanti di 2 secondi
+  Home / Fine ....... inizio / fine del brano
+  A / B ............. imposta inizio / fine del passaggio dove sei ora
+  Canc .............. cancella la selezione
+  S ................. salva il passaggio come sezione
   1 - 9 ............. richiama una sezione salvata
-  frecce sx / dx .... indietro / avanti di 2 secondi
-  + / - ............. velocita' su / giu'
+  T ................. tap: batti a tempo per registrare i BPM
+  G ................. mostra / nascondi la griglia
+  Z ................. zoom sul passaggio / tutto il brano
   PagGiu / freccia giu ... play / pausa   (pedali Bluetooth)
   PagSu  / freccia su .... ricomincia il passaggio
 

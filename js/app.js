@@ -84,7 +84,7 @@
   });
 
   function setEnabled(on) {
-    ['play', 'stop', 'startIn', 'endIn', 'setA', 'setB', 'zoomIn', 'zoomOut', 'zoomAll'].forEach(id => $(id).disabled = !on);
+    ['play', 'restartBtn', 'stop', 'startIn', 'endIn', 'setA', 'setB', 'zoomIn', 'zoomOut', 'zoomAll'].forEach(id => $(id).disabled = !on);
   }
 
   $('file').addEventListener('change', e => {
@@ -307,15 +307,15 @@
 
   // il pulsante ha larghezza fissa e la nota sta dopo: niente si sposta mentre batti
   // modalità tap: dopo il primo tocco su Tap (o T), per 2 s anche Spazio batte il tempo invece di play/pausa
-  let tapReset = null, tapMode = false;
+  let tapReset = null;
   function tap() {
     if (!S.duration) return;
     const r = L.tap();
     const btn = $('tapBtn');
     btn.textContent = r.count < 4 ? 'Tap ' + r.count + '/4' : 'Tap ✓';
     clearTimeout(tapReset);
-    tapMode = true; btn.classList.add('on');
-    tapReset = setTimeout(() => { btn.textContent = 'Tap'; tapMode = false; btn.classList.remove('on'); }, 2000);
+    btn.classList.add('on');
+    tapReset = setTimeout(() => { btn.textContent = 'Tap'; btn.classList.remove('on'); }, 2000);
     if (!r.bpm) { setNote('continua a battere…'); return; }
     const playing = !audio.paused;
     const bpm = playing ? r.bpm / audio.playbackRate : r.bpm;     // BPM del brano, non della velocità attuale
@@ -460,7 +460,6 @@
       small.textContent = fmtShort(sec.start) + ' – ' + fmtShort(sec.end) + ' · ' + Math.round(sec.speed * 100) + '%';
       txt.append(strong, small);
       name.append(key, txt);
-      name.title = 'Clic per richiamarla' + (i < 9 ? ' (tasto ' + (i + 1) + ')' : '') + ' · doppio clic per rinominare';
       name.addEventListener('click', () => recallSection(i));
       name.addEventListener('dblclick', () => {
         const n = prompt('Nuovo nome della sezione:', sec.name);
@@ -681,29 +680,87 @@
   // ======================================================================
   // Tastiera (anche pedali Bluetooth: PagGiù/PagSu, frecce su/giù)
   // ======================================================================
+  /** frecce ←/→: con la griglia visibile si salta di una battuta, senza griglia ai bordi
+      di passaggio, sezioni e brano; con Maiusc sempre ±2 secondi */
+  function arrowJump(dir, fine) {
+    const now = audio.currentTime;
+    if (fine) { userSeek(now + dir * 2); return; }
+    const tolBack = audio.paused ? 0.01 : 0.35;    // in riproduzione: ← subito dopo un punto va a quello prima
+    let target;
+    const g = S.grid;
+    if (g && S.gridShow) {
+      const bar = 60 / g.bpm * g.beatsPerBar;
+      target = dir < 0
+        ? g.offset + Math.floor((now - tolBack - g.offset) / bar) * bar
+        : g.offset + (Math.floor((now + 0.01 - g.offset) / bar) + 1) * bar;
+      if (target < 0) target = 0;
+    } else {
+      const pts = [0, S.duration];
+      if (S.region) pts.push(S.region.start, S.region.end);
+      for (const s of sections) pts.push(s.start, s.end);
+      pts.sort((a, b) => a - b);
+      target = dir < 0
+        ? pts.filter(p => p < now - tolBack).pop()
+        : pts.find(p => p > now + 0.01);
+      if (target === undefined) target = dir < 0 ? 0 : S.duration;
+    }
+    // la fine del passaggio in loop farebbe ricominciare subito: ci si posiziona appena dopo
+    if (inLoopMode() && Math.abs(target - S.region.end) < 0.01 && S.region.end < S.duration - 0.05) target = S.region.end + 0.02;
+    userSeek(target);
+  }
+
+  function toggleZoom() {
+    if (L.wave.isZoomed() || !S.region) L.wave.setView(0, S.duration);
+    else L.wave.zoomToRegion();
+  }
+
   document.addEventListener('keydown', e => {
     const t = e.target, tag = (t.tagName || '').toLowerCase();
     if (tag === 'select' || tag === 'textarea') return;
     if (tag === 'input' && t.type !== 'checkbox' && t.type !== 'range') return;
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.key === 'Escape') { closeAllPopovers(); return; }
+    if (e.key === '?') { e.preventDefault(); openKeys(); return; }
     if (!S.duration) return;
-    switch (e.key) {
-      case ' ': e.preventDefault(); if (tapMode) { if (!e.repeat) tap(); } else togglePlay(); break;
-      case 'PageDown': case 'ArrowDown': e.preventDefault(); togglePlay(); break;
+    const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    switch (k) {
+      case ' ': e.preventDefault(); if (!e.repeat) restartRegion(); break;
+      case 'Enter':
+        if (tag === 'button' || tag === 'summary' || tag === 'label') return;
+        e.preventDefault(); togglePlay(); break;
+      case 'p': case 'PageDown': case 'ArrowDown': e.preventDefault(); togglePlay(); break;
       case 'PageUp': case 'ArrowUp': e.preventDefault(); restartRegion(); break;
-      case 'a': case 'A': setA(); break;
-      case 'b': case 'B': setB(); break;
-      case 'l': case 'L': $('loop').checked = !$('loop').checked; break;
-      case 't': case 'T': tap(); break;
-      case 'ArrowLeft': e.preventDefault(); userSeek(audio.currentTime - 2); break;
-      case 'ArrowRight': e.preventDefault(); userSeek(audio.currentTime + 2); break;
+      case 'Home': e.preventDefault(); userSeek(0); break;
+      case 'End': e.preventDefault(); userSeek(Math.max(0, S.duration - 0.05)); break;
+      case 'ArrowLeft': e.preventDefault(); arrowJump(-1, e.shiftKey); break;
+      case 'ArrowRight': e.preventDefault(); arrowJump(1, e.shiftKey); break;
+      case 'a': setA(); break;
+      case 'b': setB(); break;
+      case 'Delete': case 'Backspace': e.preventDefault(); clearRegion(); break;
+      case 'l': $('loop').checked = !$('loop').checked; break;
+      case 't': if (!e.repeat) tap(); break;
+      case 'g': $('gridShow').checked = !$('gridShow').checked; $('gridShow').dispatchEvent(new Event('change')); break;
+      case 's': if (S.region) $('saveSection').click(); break;
+      case 'z': toggleZoom(); break;
       case '+': case '=': applySpeed(audio.playbackRate + 0.05); break;
       case '-': case '_': applySpeed(audio.playbackRate - 0.05); break;
+      case '0': applySpeed(1); break;
       default:
-        if (/^[1-9]$/.test(e.key)) recallSection(+e.key - 1);
+        if (/^[1-9]$/.test(k)) recallSection(+k - 1);
     }
   });
+
+  // finestra con l'elenco dei tasti (tasto ? o pulsante "Tasti" nella testata)
+  function openKeys() {
+    const d = $('keysDlg');
+    if (d.open) { d.close(); return; }
+    closeAllPopovers();
+    if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+  }
+  $('keysBtn').addEventListener('click', openKeys);
+  $('keysClose').addEventListener('click', () => $('keysDlg').close());
+  $('keysDlg').addEventListener('click', e => { if (e.target === $('keysDlg')) $('keysDlg').close(); });
+  $('restartBtn').addEventListener('click', restartRegion);
 
   // togli il focus dai controlli dopo l'uso, così Spazio/frecce restano scorciatoie globali
   document.addEventListener('click', e => { const b = e.target.closest('button'); if (b) b.blur(); });

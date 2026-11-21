@@ -1,10 +1,10 @@
 /* Looper — service worker: rende l'app installabile e utilizzabile offline.
    Strategia "prima la rete": si usa sempre la versione più recente, e la copia salvata solo senza connessione.
    Aumenta VERSION quando pubblichi una nuova versione. */
-const VERSION = 'looper-v2-4';
+const VERSION = 'looper-v2-5';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest',
-  'js/util.js', 'js/storage.js', 'js/bpm.js', 'js/audio-fx.js', 'js/waveform.js', 'js/trainer.js', 'js/app.js',
+  'js/util.js', 'js/storage.js', 'js/bpm.js', 'js/audio-fx.js', 'js/waveform.js', 'js/trainer.js', 'js/app.js', 'js/tips.js',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png',
 ];
 

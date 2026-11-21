@@ -281,6 +281,30 @@
   .tr-hint:empty { display: none; }
   #trStartBtn { font-size: 16px; padding: 9px 18px; }
 
+  /* tasti rapidi: pulsante, finestra e suggerimenti al passaggio del mouse */
+  .keys-btn { margin-left: auto; color: var(--muted); }
+  .keys-dlg {
+    width: min(860px, calc(100vw - 32px)); max-height: calc(100vh - 48px); overflow-y: auto;
+    border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px;
+    background: var(--panel); color: var(--text); box-shadow: var(--shadow);
+  }
+  .keys-dlg::backdrop { background: rgba(10, 10, 14, .45); }
+  .keys-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 17px; }
+  .keys-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 4px 28px; }
+  .keys-grid h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); margin: 12px 0 6px; }
+  .keys-grid dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 12px; margin: 0; font-size: 14px; }
+  .keys-grid dt { white-space: nowrap; }
+  .keys-grid dd { margin: 0; color: var(--muted); }
+  .tip {
+    position: fixed; z-index: 100; max-width: 280px; pointer-events: none;
+    background: var(--text); color: var(--bg); border-radius: 8px; padding: 7px 10px;
+    font-size: 13px; line-height: 1.35; box-shadow: var(--shadow);
+    opacity: 0; transform: translateY(-2px); transition: opacity .12s, transform .12s;
+  }
+  .tip.show { opacity: 1; transform: none; }
+  .tip .tip-keys { display: block; margin-top: 4px; opacity: .85; }
+  .tip kbd { background: transparent; color: inherit; border-color: currentColor; }
+
   /* ---------- schermi larghi: mixer a sinistra, velocità e allenatore a destra ---------- */
   @media (min-width: 1200px) {
     .layout { grid-template-columns: 270px minmax(0, 1fr) 340px; grid-template-areas: "mix main speed"; }
@@ -301,7 +325,7 @@
     .chip button { min-height: 44px; }
     input[type=range] { height: 32px; }
     input[type=range].vfader { height: 150px; width: 44px; }
-    .kbd-hint { display: none; }
+    .kbd-hint, .keys-btn { display: none; }
     .touch-hint { display: block; }
   }
   @media (max-width: 700px) {
@@ -322,7 +346,7 @@
     .transport .speed-mini { margin-left: 0; }
     .edge { flex: 1 1 150px; min-width: 0; }
     .edge input[type=text] { flex: 1; min-width: 0; width: auto; }
-    .arrow, #zoomLabel { display: none; }
+    .arrow, #zoomLabel, .transport .restart { display: none; }
     .ab { display: flex; gap: 8px; width: 100%; }
     .ab button { flex: 1; padding-left: 6px; padding-right: 6px; }
     .wave-bar button.small { padding: 4px 9px; }
@@ -337,7 +361,7 @@
 <body>
 <main>
   <!-- ===== Testata: titolo e apertura brani ===== -->
-  <header class="brand"><img src="icons/icon.svg" alt=""><h1>BERTACCHIO TRANSCRIBE</h1></header>
+  <header class="brand"><img src="icons/icon.svg" alt=""><h1>BERTACCHIO TRANSCRIBE</h1><button class="small keys-btn" id="keysBtn">⌨ Tasti</button></header>
   <div class="top">
     <div class="file-ctl">
       <label class="btn" for="file">Apri file…</label>
@@ -481,8 +505,9 @@
 
         <div class="transport" id="transport">
           <button class="primary" id="play" disabled>▶ Play</button>
-          <button id="stop" disabled title="Stop">■</button>
-          <label class="toggle" title="Tasto L"><input type="checkbox" id="loop" checked> Loop</label>
+          <button id="restartBtn" class="restart" disabled>⏮</button>
+          <button id="stop" disabled>■</button>
+          <label class="toggle" id="loopBox"><input type="checkbox" id="loop" checked> Loop</label>
           <div class="speed-mini">
             <button class="icon" id="spDown" title="Più lento">−</button>
             <span id="speedMini">1.00×</span>
@@ -537,10 +562,54 @@
       <p class="hint kbd-hint">
         Trascina sulla forma d'onda per selezionare il passaggio, trascina i bordi per regolarlo, clicca per spostarti. Le bande colorate sotto la panoramica sono le sezioni: cliccale per richiamarle.
         <kbd>Ctrl</kbd>+rotella (o pizzico) per lo zoom, <kbd>Alt</kbd> mentre trascini per non agganciarti ai beat.<br>
-        Tasti: <kbd>Spazio</kbd> play/pausa (dopo un Tap batte il tempo) · <kbd>A</kbd> / <kbd>B</kbd> inizio/fine · <kbd>L</kbd> loop · <kbd>T</kbd> tap tempo · <kbd>1</kbd>–<kbd>9</kbd> sezioni ·
-        <kbd>←</kbd> <kbd>→</kbd> ±2 s · <kbd>+</kbd> <kbd>−</kbd> velocità ·
-        pedale/<kbd>PagGiù</kbd> <kbd>↓</kbd> play/pausa · <kbd>PagSu</kbd> <kbd>↑</kbd> ricomincia
+        Tasti principali: <kbd>Spazio</kbd> ricomincia · <kbd>P</kbd> / <kbd>Invio</kbd> play/pausa · <kbd>T</kbd> tap tempo ·
+        <kbd>←</kbd> <kbd>→</kbd> battuta o sezione prima/dopo · <kbd>A</kbd> / <kbd>B</kbd> inizio/fine ·
+        <kbd>?</kbd> elenco completo dei tasti. Passa il mouse su un pulsante per vedere a cosa serve.
       </p>
+      <dialog class="keys-dlg" id="keysDlg" aria-labelledby="keysTitle">
+        <div class="keys-head"><strong id="keysTitle">Tasti rapidi</strong><button class="small" id="keysClose">Chiudi</button></div>
+        <div class="keys-grid">
+          <section>
+            <h3>Riproduzione</h3>
+            <dl>
+              <dt><kbd>Spazio</kbd></dt><dd>torna all'inizio del passaggio (o del brano) e suona</dd>
+              <dt><kbd>P</kbd> <kbd>Invio</kbd></dt><dd>play / pausa</dd>
+              <dt><kbd>L</kbd></dt><dd>loop sì / no</dd>
+              <dt><kbd>+</kbd> <kbd>−</kbd></dt><dd>velocità su / giù (5%)</dd>
+              <dt><kbd>0</kbd></dt><dd>velocità normale (100%)</dd>
+              <dt><kbd>↓</kbd> <kbd>PagGiù</kbd></dt><dd>play / pausa (pedali Bluetooth)</dd>
+              <dt><kbd>↑</kbd> <kbd>PagSu</kbd></dt><dd>ricomincia (pedali Bluetooth)</dd>
+            </dl>
+          </section>
+          <section>
+            <h3>Spostarsi</h3>
+            <dl>
+              <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>con la griglia: battuta precedente / successiva.<br>Senza griglia: inizio o fine di passaggio e sezioni</dd>
+              <dt><kbd>Maiusc</kbd>+<kbd>←</kbd> <kbd>→</kbd></dt><dd>indietro / avanti di 2 secondi</dd>
+              <dt><kbd>Home</kbd> <kbd>Fine</kbd></dt><dd>inizio / fine del brano</dd>
+              <dt><kbd>Z</kbd></dt><dd>zoom sul passaggio / tutto il brano</dd>
+            </dl>
+          </section>
+          <section>
+            <h3>Passaggio e sezioni</h3>
+            <dl>
+              <dt><kbd>A</kbd> <kbd>B</kbd></dt><dd>inizio / fine del passaggio dove si trova la testina</dd>
+              <dt><kbd>Canc</kbd></dt><dd>cancella la selezione</dd>
+              <dt><kbd>S</kbd></dt><dd>salva il passaggio come sezione</dd>
+              <dt><kbd>1</kbd>–<kbd>9</kbd></dt><dd>richiama una sezione salvata</dd>
+            </dl>
+          </section>
+          <section>
+            <h3>Tempo</h3>
+            <dl>
+              <dt><kbd>T</kbd></dt><dd>tap: batti a tempo (almeno 4 volte) per registrare i BPM</dd>
+              <dt><kbd>G</kbd></dt><dd>mostra / nascondi la griglia dei beat</dd>
+              <dt><kbd>Alt</kbd> + trascina</dt><dd>seleziona senza agganciarti ai beat</dd>
+              <dt><kbd>Ctrl</kbd> + rotella</dt><dd>zoom sulla forma d'onda</dd>
+            </dl>
+          </section>
+        </div>
+      </dialog>
       <p class="hint touch-hint">Sul telefono: un dito per selezionare, due dita per lo zoom. Tocca la barra sotto la forma d'onda per spostarti nel brano, le bande colorate per richiamare le sezioni.</p>
     </div>
 
@@ -622,5 +691,6 @@
 <script src="js/waveform.js"></script>
 <script src="js/trainer.js"></script>
 <script src="js/app.js"></script>
+<script src="js/tips.js"></script>
 </body>
 </html>

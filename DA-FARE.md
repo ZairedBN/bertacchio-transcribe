@@ -18,7 +18,7 @@ Problemi emersi dopo la v2 (19/11/2026), da sistemare durante la prova insieme a
 - [ ] Da sentire a orecchio su brani veri: il mixer nuovo (soprattutto voce ridotta / solo lati).
 
 ## Bug piccoli
-- [ ] **Frecce ↑/↓ "rubate"** per i pedali (play/pausa e ricomincia): impediscono di scorrere la pagina. Su PC il problema è minore con la nuova disposizione. Valutare di usare solo PagSu/PagGiù (`js/app.js`, gestione tastiera).
+- [ ] **Frecce ↑/↓ "rubate"** per i pedali (play/pausa e ricomincia): restano così per compatibilità con i pedali Bluetooth. ←/→ ora saltano per battute o tra sezioni.
 
 ## Limiti da migliorare o da verificare con brani veri
 - [ ] **BPM al doppio o alla metà** sui tempi veloci (sintetici: 160 → 80, 174 → 87); "Giant Steps" (~286) → 72. Anche "ACT!VE" dà 107,33 BPM (valore non intero, forse sbagliato): da sentire.
