@@ -10,7 +10,7 @@ the pitch) until you can play it.
 - ANYWHERE, NOTHING TO INSTALL: open the online version with Chrome, Edge or
   Safari (computer, Android, Mac). A link or QR code is all you need, no sign-up.
   Everything works except "Load link": tracks are opened from the device's files.
-  Online version: [link coming soon]
+  Online version: https://zairedbn.github.io/bertacchio-transcribe/
   You can install it as an app: on Android, browser menu > "Add to Home screen";
   on a computer with Chrome/Edge, the "Install" icon in the address bar.
   After the first visit it also works offline.

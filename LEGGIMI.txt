@@ -11,7 +11,7 @@ Carichi un brano, scegli un passaggio, lo metti in loop e lo rallenti
   Safari (computer, Android, Mac). Basta il link o il QR code, nessuna
   registrazione. Funziona tutto tranne "Carica link": i brani si aprono dai file
   del dispositivo.
-  Versione online: [link in arrivo]
+  Versione online: https://zairedbn.github.io/bertacchio-transcribe/
   Puoi installarla come app: su Android menu del browser > "Aggiungi a schermata Home";
   su computer con Chrome/Edge l'icona "Installa" nella barra dell'indirizzo.
   Dopo la prima apertura funziona anche senza internet.

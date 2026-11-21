@@ -33,7 +33,7 @@ Problemi emersi dopo la v2 (19/11/2026), da sistemare durante la prova insieme a
 - [ ] Caricamento da link nella pagina v2, dall'inizio alla fine.
 - [ ] "Apri cartella", pedali Bluetooth, scorrimento automatico vicino al bordo, qualità del suono, pizzico con dita vere, doppio tocco sui cursori del mixer.
 - [ ] Android reale e Safari su Mac (dopo la pubblicazione su GitHub Pages).
-- [ ] `LEGGIMI.txt` nello zip v2 contiene ancora "[link in arrivo]": non distribuire `dist/Looper-MP3-v2.zip` prima della pubblicazione online. Va rigenerato con la v2.1 e il nuovo nome: cartella e zip "Bertacchio Transcribe".
+- [x] Zip rigenerato con il link e il nuovo nome (i vecchi `Looper-MP3*.zip` in `dist/` non vanno più distribuiti).
 
 ## Rimandato dall'utente (solo promemoria)
 - [ ] "Progressi della trascrizione" / Esporta-Importa progetto con la casella "includi l'audio" (attiva di default). Da definire con l'utente in futuro.
@@ -42,4 +42,4 @@ Problemi emersi dopo la v2 (19/11/2026), da sistemare durante la prova insieme a
 - [x] Interfaccia in italiano, inglese, spagnolo, tedesco e francese (`js/i18n.js`): lingua del browser in automatico, menu IT/EN/ES/DE/FR in alto. `README.txt` in inglese.
 - [ ] Far rileggere le traduzioni a un madrelingua (soprattutto ES/DE/FR, fatte da Claude).
 - [ ] I messaggi di errore del server Windows (`server.ps1`) restano in italiano.
-- [ ] Pubblicazione su GitHub Pages: passi in `PUBBLICARE.md` (serve l'account GitHub dell'utente). Poi mettere il link al posto di "[link in arrivo]" in `LEGGIMI.txt`/`README.txt` e rifare lo zip.
+- [x] Pubblicato su GitHub Pages: https://zairedbn.github.io/bertacchio-transcribe/ (repo ZairedBN/bertacchio-transcribe, ramo `main`). Link inserito in LEGGIMI/README; zip nuovo `dist/Bertacchio-Transcribe-Windows.zip` (cartella "Bertacchio Transcribe").
