@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Looper MP3</title>
+<title>Bertacchio Transcribe</title>
 <meta name="description" content="Metti in loop un passaggio di un brano, rallentalo e studialo con il tuo strumento.">
 <meta name="theme-color" content="#d62f3a">
 <link rel="manifest" href="manifest.webmanifest">
@@ -121,14 +121,14 @@
   .touch-hint { display: none; }
   .card-title { font-weight: 700; font-size: 15px; color: var(--text); }
 
-  /* testata */
+  /* testata: titolo e, sotto, la barra per aprire i brani */
+  .brand { display: flex; align-items: center; gap: 12px; margin: 2px 0 12px; }
+  .brand img { width: 40px; height: 40px; }
+  .brand h1 { font-size: 22px; margin: 0; letter-spacing: .06em; font-weight: 800; }
   .top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 14px; }
-  .brand { display: flex; align-items: center; gap: 10px; margin-right: 8px; }
-  .brand img { width: 30px; height: 30px; }
-  .brand h1 { font-size: 20px; margin: 0; white-space: nowrap; }
-  .file-ctl { display: flex; align-items: center; gap: 8px; flex: 1 1 320px; min-width: 0; }
+  .file-ctl { display: flex; align-items: center; gap: 8px; flex: none; }
   .filename { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1 1 auto; }
-  .link-box { display: flex; gap: 8px; flex: 1 1 360px; min-width: 0; }
+  .link-box { display: flex; gap: 8px; flex: 1 1 360px; min-width: 0; max-width: 720px; }
   input[type=text].link-in { flex: 1; min-width: 0; width: auto; }
   .link-msg { color: var(--muted); font-size: 13px; margin: -6px 2px 12px; }
   .link-msg:empty { display: none; }
@@ -155,12 +155,15 @@
   .grid-panel { width: min(330px, calc(100vw - 32px)); padding: 12px; }
   .grid-panel .row + .row { margin-top: 10px; }
 
-  /* disposizione: colonna principale + colonna laterale su schermi larghi */
-  .layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 18px; }
-  .side { min-width: 0; }
+  /* disposizione a colonne (vedi sotto per le larghezze) */
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "main" "mix" "speed"; gap: 0 18px; }
+  .main-col { grid-area: main; min-width: 0; }
+  .mix-col { grid-area: mix; min-width: 0; }
+  .side { grid-area: speed; min-width: 0; }
 
   /* forma d'onda */
   .wave-bar { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+  .wave-bar .filename { flex: 0 1 auto; color: var(--text); font-weight: 600; font-size: 14px; }
   .wave-bar .time { margin-right: auto; color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
   .wave-wrap {
     position: relative;
@@ -188,6 +191,7 @@
   .tempo .note-ic { color: var(--muted); font-size: 18px; line-height: 1; }
   .tempo input.bpm { width: 78px; }
   #tapBtn { min-width: 84px; font-variant-numeric: tabular-nums; }
+  #tapBtn.on { border-color: var(--accent); color: var(--accent); font-weight: 600; }
   .tempo .det { flex: 1 1 0; min-width: 0; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   /* barra dei comandi principali */
@@ -246,17 +250,17 @@
   .tr-hint:empty { display: none; }
   #trStartBtn { font-size: 16px; padding: 9px 18px; }
 
-  /* ---------- schermi larghi: mixer e allenatore a lato ---------- */
-  @media (min-width: 1100px) {
-    .layout { grid-template-columns: minmax(0, 1fr) 380px; }
-    .side { position: sticky; top: 16px; align-self: start; max-height: calc(100vh - 32px); overflow-y: auto; }
+  /* ---------- schermi larghi: mixer a sinistra, velocità e allenatore a destra ---------- */
+  @media (min-width: 1200px) {
+    .layout { grid-template-columns: 270px minmax(0, 1fr) 340px; grid-template-areas: "mix main speed"; }
+    .mix-col, .side { position: sticky; top: 16px; align-self: start; max-height: calc(100vh - 32px); overflow-y: auto; }
     .wave-wrap { height: 220px; }
     .side .tr-val { min-width: 0; }
-    .side .label { min-width: 70px; }
+    .side .label, .mix-col .label { min-width: 64px; }
   }
-
-  @media (min-width: 701px) and (max-width: 1099px) {
-    .side { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; align-items: start; }
+  /* finestre medie e tablet: brano sopra, mixer e velocità affiancati sotto */
+  @media (min-width: 701px) and (max-width: 1199px) {
+    .layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "main main" "mix speed"; align-items: start; }
   }
 
   /* ---------- telefoni e tablet ---------- */
@@ -273,7 +277,9 @@
   @media (max-width: 700px) {
     main { padding: 12px 12px 110px; }
     .brand h1 { font-size: 18px; }
-    .brand img { width: 26px; height: 26px; }
+    .wave-bar .filename { flex-basis: 100%; }
+    .file-ctl { flex: 1 1 100%; }
+    .brand img { width: 32px; height: 32px; }
     .panel { padding: 12px; border-radius: 10px; }
     .label { min-width: 0; width: 100%; }
     .wave-wrap { height: 130px; }
@@ -290,7 +296,9 @@
     .ab { display: flex; gap: 8px; width: 100%; }
     .ab button { flex: 1; padding-left: 6px; padding-right: 6px; }
     .wave-bar button.small { padding: 4px 9px; }
-    .popover.recent-panel { position: fixed; top: 64px; left: 12px; right: 12px; width: auto; }
+    .file-ctl { position: relative; }
+    .file-ctl .pop-wrap { position: static; }
+    .popover.recent-panel { width: auto; right: 0; }
     .tempo { flex-wrap: wrap; }
     .tempo .det { flex-basis: 100%; }
   }
@@ -299,8 +307,8 @@
 <body>
 <main>
   <!-- ===== Testata: titolo e apertura brani ===== -->
-  <header class="top">
-    <div class="brand"><img src="icons/icon.svg" alt=""><h1>Looper MP3</h1></div>
+  <header class="brand"><img src="icons/icon.svg" alt=""><h1>BERTACCHIO TRANSCRIBE</h1></header>
+  <div class="top">
     <div class="file-ctl">
       <label class="btn" for="file">Apri file…</label>
       <input type="file" id="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.flac">
@@ -314,20 +322,82 @@
           </div>
         </div>
       </div>
-      <span class="filename" id="filename">Nessun brano caricato</span>
     </div>
     <div class="link-box" id="linkRow" hidden>
       <input type="text" id="linkIn" class="link-in" placeholder="…oppure incolla un link (YouTube, SoundCloud…)" inputmode="url">
       <button id="linkBtn">Carica link</button>
     </div>
-  </header>
+  </div>
   <div class="link-msg" id="linkMsg"></div>
 
   <div class="layout">
+    <aside class="mix-col">
+      <!-- ===== Mixer ===== -->
+      <details class="panel" data-key="mixer" data-default="open">
+        <summary>Mixer</summary>
+        <div class="faders">
+          <div class="fader master">
+            <output id="volVal">100%</output>
+            <input type="range" class="vfader" id="vol" min="0" max="150" step="1" value="100" data-def="100" aria-label="Volume">
+            <label for="vol">Volume</label>
+          </div>
+          <div class="fader">
+            <output id="eqLowVal">0 dB</output>
+            <input type="range" class="vfader" id="eqLow" min="-12" max="12" step="1" value="0" data-def="0" aria-label="Bassi">
+            <label for="eqLow">Bassi</label>
+          </div>
+          <div class="fader">
+            <output id="eqMidVal">0 dB</output>
+            <input type="range" class="vfader" id="eqMid" min="-12" max="12" step="1" value="0" data-def="0" aria-label="Medi">
+            <label for="eqMid">Medi</label>
+          </div>
+          <div class="fader">
+            <output id="eqHighVal">0 dB</output>
+            <input type="range" class="vfader" id="eqHigh" min="-12" max="12" step="1" value="0" data-def="0" aria-label="Alti">
+            <label for="eqHigh">Alti</label>
+          </div>
+        </div>
+        <p class="note mixer-tip">Doppio clic (o doppio tocco) su un cursore per riportarlo a zero.</p>
+        <div class="row">
+          <span class="label">Ascolta</span>
+          <select id="iso">
+            <option value="normal">tutto il brano</option>
+            <option value="left">solo canale sinistro</option>
+            <option value="right">solo canale destro</option>
+            <option value="novocal">voce ridotta</option>
+            <option value="bass">solo bassi</option>
+            <option value="nobass">senza bassi</option>
+          </select>
+        </div>
+        <div class="row">
+          <label class="check"><input type="checkbox" id="fade" checked> Dissolvenza ai bordi del loop</label>
+        </div>
+        <details data-key="sound">
+          <summary>Tonalità</summary>
+          <div class="row">
+            <span class="label">Trasposizione</span>
+            <input type="range" id="semi" min="-12" max="12" step="1" value="0">
+            <span class="slider-val" id="semiVal">0 semitoni</span>
+          </div>
+          <div class="row">
+            <span class="label">Accordatura</span>
+            <input type="range" id="cents" min="-50" max="50" step="1" value="0">
+            <span class="slider-val" id="centsVal">0 cent</span>
+          </div>
+          <p class="note">Cambia la tonalità senza cambiare la velocità (es. per il capotasto o uno strumento accordato diversamente). Qualità adatta allo studio.</p>
+        </details>
+        <div class="row">
+          <button class="small" id="soundReset">Reimposta suono</button>
+          <span class="note" id="soundNote"></span>
+        </div>
+      </details>
+    </aside>
+
     <div class="main-col">
       <!-- ===== Brano: forma d'onda, tempo, comandi ===== -->
       <section class="panel">
         <div class="wave-bar">
+          <span class="filename" id="filename">Nessun brano caricato</span>
           <span class="time" id="time">0:00.00 / 0:00.00</span>
           <span class="muted" id="zoomLabel"></span>
           <button class="small" id="zoomOut" title="Riduci zoom" disabled>−</button>
@@ -347,7 +417,7 @@
           <span class="note-ic" aria-hidden="true">♩</span>
           <input type="number" id="bpm" class="bpm" min="20" max="300" step="0.1" inputmode="decimal" title="Battiti al minuto (BPM)" aria-label="BPM">
           <span class="muted">BPM</span>
-          <button class="small" id="tapBtn" title="Batti a tempo con la musica, almeno 4 volte (tasto T)">Tap</button>
+          <button class="small" id="tapBtn" title="Batti a tempo con la musica, almeno 4 volte (tasto T; dopo il primo colpo anche Spazio)">Tap</button>
           <div class="pop-wrap">
             <button class="small" id="gridBtn" title="Griglia dei beat">Griglia ▾</button>
             <div class="popover grid-panel" id="gridPanel" hidden>
@@ -434,7 +504,7 @@
       <p class="hint kbd-hint">
         Trascina sulla forma d'onda per selezionare il passaggio, trascina i bordi per regolarlo, clicca per spostarti.
         <kbd>Ctrl</kbd>+rotella (o pizzico) per lo zoom, <kbd>Alt</kbd> mentre trascini per non agganciarti ai beat.<br>
-        Tasti: <kbd>Spazio</kbd> play/pausa · <kbd>A</kbd> / <kbd>B</kbd> inizio/fine · <kbd>L</kbd> loop · <kbd>T</kbd> tap tempo · <kbd>1</kbd>–<kbd>9</kbd> sezioni ·
+        Tasti: <kbd>Spazio</kbd> play/pausa (dopo un Tap batte il tempo) · <kbd>A</kbd> / <kbd>B</kbd> inizio/fine · <kbd>L</kbd> loop · <kbd>T</kbd> tap tempo · <kbd>1</kbd>–<kbd>9</kbd> sezioni ·
         <kbd>←</kbd> <kbd>→</kbd> ±2 s · <kbd>+</kbd> <kbd>−</kbd> velocità ·
         pedale/<kbd>PagGiù</kbd> <kbd>↓</kbd> play/pausa · <kbd>PagSu</kbd> <kbd>↑</kbd> ricomincia
       </p>
@@ -442,66 +512,6 @@
     </div>
 
     <aside class="side">
-      <!-- ===== Mixer ===== -->
-      <details class="panel" data-key="mixer" data-default="open">
-        <summary>Mixer</summary>
-        <div class="faders">
-          <div class="fader master">
-            <output id="volVal">100%</output>
-            <input type="range" class="vfader" id="vol" min="0" max="150" step="1" value="100" data-def="100" aria-label="Volume">
-            <label for="vol">Volume</label>
-          </div>
-          <div class="fader">
-            <output id="eqLowVal">0 dB</output>
-            <input type="range" class="vfader" id="eqLow" min="-12" max="12" step="1" value="0" data-def="0" aria-label="Bassi">
-            <label for="eqLow">Bassi</label>
-          </div>
-          <div class="fader">
-            <output id="eqMidVal">0 dB</output>
-            <input type="range" class="vfader" id="eqMid" min="-12" max="12" step="1" value="0" data-def="0" aria-label="Medi">
-            <label for="eqMid">Medi</label>
-          </div>
-          <div class="fader">
-            <output id="eqHighVal">0 dB</output>
-            <input type="range" class="vfader" id="eqHigh" min="-12" max="12" step="1" value="0" data-def="0" aria-label="Alti">
-            <label for="eqHigh">Alti</label>
-          </div>
-        </div>
-        <p class="note mixer-tip">Doppio clic (o doppio tocco) su un cursore per riportarlo a zero.</p>
-        <div class="row">
-          <span class="label">Ascolta</span>
-          <select id="iso">
-            <option value="normal">tutto il brano</option>
-            <option value="left">solo canale sinistro</option>
-            <option value="right">solo canale destro</option>
-            <option value="novocal">voce ridotta</option>
-            <option value="bass">solo bassi</option>
-            <option value="nobass">senza bassi</option>
-          </select>
-        </div>
-        <div class="row">
-          <label class="check"><input type="checkbox" id="fade" checked> Dissolvenza ai bordi del loop</label>
-        </div>
-        <details data-key="sound">
-          <summary>Tonalità</summary>
-          <div class="row">
-            <span class="label">Trasposizione</span>
-            <input type="range" id="semi" min="-12" max="12" step="1" value="0">
-            <span class="slider-val" id="semiVal">0 semitoni</span>
-          </div>
-          <div class="row">
-            <span class="label">Accordatura</span>
-            <input type="range" id="cents" min="-50" max="50" step="1" value="0">
-            <span class="slider-val" id="centsVal">0 cent</span>
-          </div>
-          <p class="note">Cambia la tonalità senza cambiare la velocità (es. per il capotasto o uno strumento accordato diversamente). Qualità adatta allo studio.</p>
-        </details>
-        <div class="row">
-          <button class="small" id="soundReset">Reimposta suono</button>
-          <span class="note" id="soundNote"></span>
-        </div>
-      </details>
-
       <!-- ===== Velocità e allenatore ===== -->
       <details class="panel" data-key="speedcard" data-default="wide">
         <summary>Velocità e allenatore</summary>

@@ -1,4 +1,4 @@
-# Looper MP3 - server locale
+# Bertacchio Transcribe - server locale
 # Serve la pagina, scarica l'audio dai link tramite yt-dlp e gestisce l'elenco dei brani recenti.
 # Avvio: doppio clic su avvia-looper.bat (oppure: powershell -ExecutionPolicy Bypass -File server.ps1)
 
@@ -279,7 +279,7 @@ try {
   exit 1
 }
 
-Write-Host "Looper attivo su $Prefix" -ForegroundColor Green
+Write-Host "Bertacchio Transcribe attivo su $Prefix" -ForegroundColor Green
 Write-Host 'Chiudi questa finestra (o premi Ctrl+C) per fermarlo.'
 if (-not (Test-Path $YtDlp)) { Write-Host 'Attenzione: bin\yt-dlp.exe non trovato, i link non funzioneranno.' -ForegroundColor Yellow }
 if ($env:LOOPER_NO_BROWSER -ne '1') { Start-Process $Prefix }

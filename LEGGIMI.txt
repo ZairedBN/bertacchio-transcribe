@@ -1,5 +1,5 @@
-LOOPER MP3 - per studiare i brani con il tuo strumento
-=====================================================
+BERTACCHIO TRANSCRIBE - per studiare i brani con il tuo strumento
+================================================================
 
 Carichi un brano, scegli un passaggio, lo metti in loop e lo rallenti
 (senza cambiare l'intonazione) finche' non ti viene.
@@ -22,7 +22,7 @@ Carichi un brano, scegli un passaggio, lo metti in loop e lo rallenti
 -------------------------
 1) Estrai lo zip: tasto destro sul file .zip > "Estrai tutto..."
    (ad esempio sul Desktop). NON avviarlo da dentro lo zip.
-2) Apri la cartella "Looper MP3" e fai doppio clic su  avvia-looper.bat
+2) Apri la cartella "Bertacchio Transcribe" e fai doppio clic su  avvia-looper.bat
 3) Si apre una finestra nera e poi il browser con il looper.
    La finestra nera deve restare aperta finche' usi il looper:
    per chiudere il programma basta chiuderla.
@@ -52,7 +52,8 @@ Se il browser non si apre da solo, vai all'indirizzo:  http://localhost:8765
   "Mantieni intonazione" fa si' che rallentando il brano non diventi piu' grave.
 
 - MIXER
-  Sul computer sta a destra (su telefono e tablet sotto il passaggio):
+  Sul computer sta a sinistra; velocita' e allenatore stanno a destra
+  (su telefono e tablet si trovano sotto il passaggio):
   cursori verticali per Volume, Bassi, Medi e Alti.
   Doppio clic (o doppio tocco) su un cursore lo riporta a zero.
 
@@ -71,6 +72,8 @@ disattivarlo al volo).
   inizia dove si trova ora la testina) e il tempo in chiave.
 - Se i BPM sono sbagliati: premi "Tap" a tempo con la musica (almeno 4 volte,
   il pulsante conta 1/4, 2/4...) oppure scrivili a mano.
+  Dopo il primo Tap puoi continuare a battere con la barra spaziatrice;
+  quando smetti per 2 secondi, Spazio torna a fare play/pausa.
 
 
 5. FUNZIONI UTILI PER LO STUDIO
@@ -95,10 +98,10 @@ disattivarlo al volo).
 
 7. TASTI RAPIDI (computer)
 --------------------------
-  Spazio ............ play / pausa
+  Spazio ............ play / pausa  (dopo aver premuto Tap: batte il tempo)
   A / B ............. imposta inizio / fine del loop dove sei ora
   L ................. loop si' / no
-  T ................. tap tempo
+  T ................. tap tempo (poi puoi continuare anche con Spazio)
   1 - 9 ............. richiama una sezione salvata
   frecce sx / dx .... indietro / avanti di 2 secondi
   + / - ............. velocita' su / giu'

@@ -1,6 +1,6 @@
 {
-  "name": "Looper MP3",
-  "short_name": "Looper",
+  "name": "Bertacchio Transcribe",
+  "short_name": "Bertacchio",
   "description": "Metti in loop un passaggio di un brano, rallentalo e studialo con il tuo strumento.",
   "lang": "it",
   "start_url": "./",

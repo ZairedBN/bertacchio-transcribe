@@ -24,7 +24,7 @@ Problemi emersi dopo la v2 (19/11/2026), da sistemare durante la prova insieme a
 - [ ] Caricamento da link nella pagina v2, dall'inizio alla fine.
 - [ ] "Apri cartella", pedali Bluetooth, scorrimento automatico vicino al bordo, qualità del suono, pizzico con dita vere, doppio tocco sui cursori del mixer.
 - [ ] Android reale e Safari su Mac (dopo la pubblicazione su GitHub Pages).
-- [ ] `LEGGIMI.txt` nello zip v2 contiene ancora "[link in arrivo]": non distribuire `dist/Looper-MP3-v2.zip` prima della pubblicazione online (e va rigenerato con la v2.1).
+- [ ] `LEGGIMI.txt` nello zip v2 contiene ancora "[link in arrivo]": non distribuire `dist/Looper-MP3-v2.zip` prima della pubblicazione online. Va rigenerato con la v2.1 e il nuovo nome: cartella e zip "Bertacchio Transcribe".
 
 ## Rimandato dall'utente (solo promemoria)
 - [ ] "Progressi della trascrizione" / Esporta-Importa progetto con la casella "includi l'audio" (attiva di default). Da definire con l'utente in futuro.

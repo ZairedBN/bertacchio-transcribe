@@ -303,14 +303,16 @@
   });
 
   // il pulsante ha larghezza fissa e la nota sta dopo: niente si sposta mentre batti
-  let tapReset = null;
+  // modalità tap: dopo il primo tocco su Tap (o T), per 2 s anche Spazio batte il tempo invece di play/pausa
+  let tapReset = null, tapMode = false;
   function tap() {
     if (!S.duration) return;
     const r = L.tap();
     const btn = $('tapBtn');
     btn.textContent = r.count < 4 ? 'Tap ' + r.count + '/4' : 'Tap ✓';
     clearTimeout(tapReset);
-    tapReset = setTimeout(() => { btn.textContent = 'Tap'; }, 2200);
+    tapMode = true; btn.classList.add('on');
+    tapReset = setTimeout(() => { btn.textContent = 'Tap'; tapMode = false; btn.classList.remove('on'); }, 2000);
     if (!r.bpm) { setNote('continua a battere…'); return; }
     const playing = !audio.paused;
     const bpm = playing ? r.bpm / audio.playbackRate : r.bpm;     // BPM del brano, non della velocità attuale
@@ -665,7 +667,8 @@
     if (e.key === 'Escape') { closeAllPopovers(); return; }
     if (!S.duration) return;
     switch (e.key) {
-      case ' ': case 'PageDown': case 'ArrowDown': e.preventDefault(); togglePlay(); break;
+      case ' ': e.preventDefault(); if (tapMode) { if (!e.repeat) tap(); } else togglePlay(); break;
+      case 'PageDown': case 'ArrowDown': e.preventDefault(); togglePlay(); break;
       case 'PageUp': case 'ArrowUp': e.preventDefault(); restartRegion(); break;
       case 'a': case 'A': setA(); break;
       case 'b': case 'B': setB(); break;
