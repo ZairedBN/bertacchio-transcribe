@@ -91,8 +91,9 @@ disattivarlo al volo).
   Ricomincia: il brano resta fermo durante i click e parte subito dopo.
 - SEZIONI: seleziona un passaggio e premi "+ Salva sezione" (Intro, Assolo...).
   Ogni sezione ha il suo colore: compare come scheda (con numero, inizio-fine e
-  velocita') e come banda colorata sotto la forma d'onda. La ritrovi con un clic
-  sulla scheda o sulla banda (o con i tasti 1-9), anche nei giorni successivi.
+  velocita') e come banda colorata in fondo alla forma d'onda. La ritrovi con un clic
+  (o un tocco) sulla scheda o sulla banda, o con i tasti 1-9, anche nei giorni
+  successivi. Il pulsante Loop prende il colore della sezione che stai ascoltando.
 - ALLENATORE DI VELOCITA' (nel riquadro "Velocita' e allenatore"): scegli partenza (es. 70%) e obiettivo (100%),
   il ritmo di aumento (Graduale, Normale, Veloce) e premi "Avvia allenamento":
   a ogni ripetizione la velocita' sale da sola. La barra mostra a che punto sei.

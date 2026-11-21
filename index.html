@@ -209,6 +209,12 @@
     border-radius: 8px; padding: 6px 12px; cursor: pointer; user-select: none; background: var(--input-bg);
   }
   .toggle:has(input:checked) { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  /* Loop sul colore della sezione in ascolto */
+  #loopBox { --loop-c: var(--accent); transition: background .15s, border-color .15s, color .15s; }
+  #loopBox input { accent-color: var(--loop-c); }
+  #loopBox:has(input:checked) { border-color: var(--loop-c); color: var(--loop-c); }
+  #loopBox.sec:has(input:checked) { background: var(--loop-c); color: #fff; }
+  #loopBox.sec input { accent-color: #fff; }
   .speed-mini { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; }
   .speed-mini span { min-width: 54px; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
 
@@ -577,7 +583,7 @@
       </section>
 
       <p class="hint kbd-hint">
-        Trascina sulla forma d'onda per selezionare il passaggio, trascina i bordi per regolarlo, clicca per spostarti. Le bande colorate sotto la panoramica sono le sezioni: cliccale per richiamarle.
+        Trascina sulla forma d'onda per selezionare il passaggio, trascina i bordi per regolarlo, clicca per spostarti. Le bande colorate in fondo alla forma d'onda e sotto la panoramica sono le sezioni: un clic le richiama.
         <kbd>Ctrl</kbd>+rotella (o pizzico) per lo zoom, <kbd>Alt</kbd> mentre trascini per non agganciarti ai beat.<br>
         Tasti principali: <kbd>Spazio</kbd> ricomincia · <kbd>P</kbd> / <kbd>Invio</kbd> play/pausa · <kbd>T</kbd> tap tempo ·
         <kbd>←</kbd> <kbd>→</kbd> battuta o sezione prima/dopo · <kbd>A</kbd> / <kbd>B</kbd> inizio/fine ·
@@ -627,7 +633,7 @@
           </section>
         </div>
       </dialog>
-      <p class="hint touch-hint">Sul telefono: un dito per selezionare, due dita per lo zoom. Tocca la barra sotto la forma d'onda per spostarti nel brano, le bande colorate per richiamare le sezioni. Tieni premuto un pulsante per sapere a cosa serve.</p>
+      <p class="hint touch-hint">Sul telefono: un dito per selezionare, due dita per lo zoom. Tocca la barra sotto la forma d'onda per spostarti nel brano, tocca le bande colorate in fondo alla forma d'onda per richiamare le sezioni. Tieni premuto un pulsante per sapere a cosa serve.</p>
     </div>
 
     <aside class="side">

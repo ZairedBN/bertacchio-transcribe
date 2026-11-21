@@ -208,6 +208,15 @@
     });
     c.restore();
   }
+  /** sezione sotto il puntatore nella striscia in basso della forma d'onda (-1 = nessuna) */
+  function sectionAtWave(clientX, clientY, touch) {
+    const secs = S.sections;
+    if (!secs || !secs.length) return -1;
+    const r = canvas.getBoundingClientRect();
+    if (clientY < r.bottom - (touch ? 32 : 18)) return -1;   // al dito si concede qualche pixel in più
+    const t = xToTime(clientX), tol = (touch ? 6 : 2) / pxPerSec();
+    return secs.findIndex(s => t >= s.start - tol && t <= s.end + tol);
+  }
   const OV_BAND = 6;   // altezza (px CSS) delle bande delle sezioni nella panoramica
   function sectionAtOverview(clientX, clientY) {
     const secs = S.sections;
@@ -345,7 +354,9 @@
       const ds = Math.abs(t - R.start) * pps, de = Math.abs(t - R.end) * pps, tol = touch ? 24 : 8;
       if (Math.min(ds, de) <= tol) mode = ds <= de ? 'start' : 'end';
     }
-    drag = { mode, anchor: snap(t, e, touch), startX: e.clientX, lastX: e.clientX, lastE: e, moved: false, touch, before: regionCopy() };
+    const si = mode === 'new' ? sectionAtWave(e.clientX, e.clientY, touch) : -1;
+    if (si >= 0) mode = 'section';      // clic/tocco su un marcatore di sezione: la richiama
+    drag = { mode, section: si, anchor: snap(t, e, touch), startX: e.clientX, lastX: e.clientX, lastE: e, moved: false, touch, before: regionCopy() };
   });
 
   canvas.addEventListener('pointermove', e => {
@@ -366,13 +377,14 @@
         let near = false;
         const R = S.region;
         if (R) { const t = xToTime(e.clientX); near = Math.min(Math.abs(t - R.start), Math.abs(t - R.end)) * pxPerSec() <= 8; }
-        canvas.style.cursor = near ? 'ew-resize' : 'crosshair';
+        canvas.style.cursor = near ? 'ew-resize' : sectionAtWave(e.clientX, e.clientY, false) >= 0 ? 'pointer' : 'crosshair';
       }
       return;
     }
     drag.lastX = e.clientX; drag.lastE = e;
     if (!drag.moved && Math.abs(e.clientX - drag.startX) > (drag.touch ? 8 : 3)) {
       drag.moved = true;
+      if (drag.mode === 'section') drag.mode = 'new';   // trascinando dal marcatore si fa una selezione normale
       if (!autoRaf) autoRaf = requestAnimationFrame(autoScroll);
     }
     if (drag.moved) applyDrag(e.clientX, e);
@@ -390,7 +402,8 @@
     drag = null;
     if (autoRaf) { cancelAnimationFrame(autoRaf); autoRaf = 0; }
     if (cancelled) return;
-    if (!d.moved) hooks.seek(xToTime(e.clientX));
+    if (!d.moved && d.mode === 'section' && hooks.recallSection) hooks.recallSection(d.section);
+    else if (!d.moved) hooks.seek(xToTime(e.clientX));
     else hooks.dragEnd();
   }
   canvas.addEventListener('pointerup', e => pointerEnd(e, false));

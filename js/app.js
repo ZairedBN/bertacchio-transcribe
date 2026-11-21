@@ -437,6 +437,13 @@
     box.innerHTML = '';
     S.sections = sections;
     L.wave.invalidate();
+    // il pulsante Loop prende il colore della sezione in ascolto
+    const Rc = S.region;
+    const active = Rc ? sections.findIndex(s => Math.abs(Rc.start - s.start) < 0.01 && Math.abs(Rc.end - s.end) < 0.01) : -1;
+    const loopBox = $('loopBox');
+    if (active >= 0) loopBox.style.setProperty('--loop-c', L.sectionColorVar(active));
+    else loopBox.style.removeProperty('--loop-c');
+    loopBox.classList.toggle('sec', active >= 0);
     if (!sections.length) {
       const s = document.createElement('span');
       s.className = 'muted';
