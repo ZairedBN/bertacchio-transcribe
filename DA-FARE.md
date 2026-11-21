@@ -37,3 +37,9 @@ Problemi emersi dopo la v2 (19/11/2026), da sistemare durante la prova insieme a
 
 ## Rimandato dall'utente (solo promemoria)
 - [ ] "Progressi della trascrizione" / Esporta-Importa progetto con la casella "includi l'audio" (attiva di default). Da definire con l'utente in futuro.
+
+## Lingue e pubblicazione (21/11/2026)
+- [x] Interfaccia in italiano, inglese, spagnolo, tedesco e francese (`js/i18n.js`): lingua del browser in automatico, menu IT/EN/ES/DE/FR in alto. `README.txt` in inglese.
+- [ ] Far rileggere le traduzioni a un madrelingua (soprattutto ES/DE/FR, fatte da Claude).
+- [ ] I messaggi di errore del server Windows (`server.ps1`) restano in italiano.
+- [ ] Pubblicazione su GitHub Pages: passi in `PUBBLICARE.md` (serve l'account GitHub dell'utente). Poi mettere il link al posto di "[link in arrivo]" in `LEGGIMI.txt`/`README.txt` e rifare lo zip.

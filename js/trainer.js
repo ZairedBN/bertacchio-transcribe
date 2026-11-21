@@ -39,7 +39,7 @@
     document.querySelectorAll('.tr-preset').forEach(b => b.classList.toggle('on', b.dataset.p === T.preset));
     $('trCustom').hidden = T.preset !== 'custom';
     const p = PRESETS[T.preset];
-    $('trPresetNote').textContent = p ? '+' + p.step + '% ogni ' + (p.every === 1 ? 'giro' : p.every + ' giri') : '';
+    $('trPresetNote').textContent = p ? L.t(p.every === 1 ? '+{step}% ogni giro' : '+{step}% ogni {n} giri', { step: p.step, n: p.every }) : '';
 
     $('trIdle').hidden = T.active;
     $('trRun').hidden = !T.active;
@@ -56,18 +56,18 @@
     $('trTo').textContent = c.target + '%';
     const reached = c.target >= c.start ? cur >= c.target : cur <= c.target;
     if (reached) {
-      st.textContent = '🎉 Obiettivo raggiunto: ' + withBpm(cur) + '. Continua a ripetere o premi Ricomincia.';
+      st.textContent = L.t('🎉 Obiettivo raggiunto: {v}. Continua a ripetere o premi Ricomincia.', { v: withBpm(cur) });
     } else {
       const left = c.every - (T.loops % c.every);
-      st.textContent = 'Giro ' + (T.loops + 1) + ' · ' + withBpm(cur) + ' · prossimo aumento tra ' + left + (left === 1 ? ' giro' : ' giri');
+      st.textContent = L.t(left === 1 ? 'Giro {n} · {v} · prossimo aumento tra 1 giro' : 'Giro {n} · {v} · prossimo aumento tra {left} giri', { n: T.loops + 1, v: withBpm(cur), left });
     }
-    $('trPause').textContent = (!audio.paused || L.app.isWaiting()) ? '❚❚ Pausa' : '▶ Riprendi';
+    $('trPause').textContent = L.t((!audio.paused || L.app.isWaiting()) ? '❚❚ Pausa' : '▶ Riprendi');
   }
 
   function start() {
     if (!L.state.region) {
       $('trainerStatus').textContent = '';
-      $('trHint').textContent = 'Prima seleziona sulla forma d\'onda il passaggio da studiare (o scegli una sezione salvata).';
+      $('trHint').textContent = L.t('Prima seleziona sulla forma d\'onda il passaggio da studiare (o scegli una sezione salvata).');
       return;
     }
     $('trHint').textContent = '';

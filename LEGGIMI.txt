@@ -7,19 +7,22 @@ Carichi un brano, scegli un passaggio, lo metti in loop e lo rallenti
 
 1. DOVE FUNZIONA
 ----------------
-- WINDOWS (questa cartella): tutte le funzioni, compreso caricare brani da un link
-  (YouTube, SoundCloud, Bandcamp...). Serve Chrome o Edge.
-- ANDROID (telefono e tablet), MAC e qualsiasi computer: usa la versione online
-  (link qui sotto) con Chrome, Edge o Safari. Funziona tutto tranne i link:
-  i brani si aprono dai file del dispositivo.
+- OVUNQUE, SENZA INSTALLARE NULLA: apri la versione online con Chrome, Edge o
+  Safari (computer, Android, Mac). Basta il link o il QR code, nessuna
+  registrazione. Funziona tutto tranne "Carica link": i brani si aprono dai file
+  del dispositivo.
   Versione online: [link in arrivo]
   Puoi installarla come app: su Android menu del browser > "Aggiungi a schermata Home";
-  su Mac con Chrome/Edge l'icona "Installa" nella barra dell'indirizzo.
+  su computer con Chrome/Edge l'icona "Installa" nella barra dell'indirizzo.
   Dopo la prima apertura funziona anche senza internet.
+- WINDOWS CON I LINK (questa cartella, facoltativa): serve solo se vuoi caricare
+  brani da un link (YouTube, SoundCloud, Bandcamp...). Serve Chrome o Edge.
+- LINGUA: il programma parla italiano, inglese, spagnolo, tedesco e francese.
+  Sceglie da solo la lingua del browser; puoi cambiarla dal menu in alto a destra.
 
 
-2. PRIMO AVVIO SU WINDOWS
--------------------------
+2. PRIMO AVVIO SU WINDOWS (solo per i link)
+-------------------------------------------
 1) Estrai lo zip: tasto destro sul file .zip > "Estrai tutto..."
    (ad esempio sul Desktop). NON avviarlo da dentro lo zip.
 2) Apri la cartella "Bertacchio Transcribe" e fai doppio clic su  avvia-looper.bat

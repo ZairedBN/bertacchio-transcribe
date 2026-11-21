@@ -8,14 +8,14 @@
   function open() {
     if (dbPromise) return dbPromise;
     dbPromise = new Promise((resolve, reject) => {
-      if (!window.indexedDB) { reject(new Error('Archivio del browser non disponibile')); return; }
+      if (!window.indexedDB) { reject(new Error(L.t('Archivio del browser non disponibile'))); return; }
       const req = indexedDB.open(DB_NAME, 1);
       req.onupgradeneeded = () => {
         const db = req.result;
         if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE, { keyPath: 'key' });
       };
       req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error || new Error('Archivio del browser non disponibile'));
+      req.onerror = () => reject(req.error || new Error(L.t('Archivio del browser non disponibile')));
     });
     dbPromise.catch(() => { dbPromise = null; });
     return dbPromise;
@@ -30,7 +30,7 @@
       Promise.resolve(fn(st, r => { result = r; })).catch(reject);
       t.oncomplete = () => resolve(result);
       t.onerror = () => reject(t.error);
-      t.onabort = () => reject(t.error || new Error('Salvataggio non riuscito (spazio esaurito?)'));
+      t.onabort = () => reject(t.error || new Error(L.t('Salvataggio non riuscito (spazio esaurito?)')));
     });
   }
 

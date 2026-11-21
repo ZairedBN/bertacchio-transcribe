@@ -8,6 +8,7 @@
     recentBtn: ['Riapri al volo i brani già usati'],
     linkBtn: ['Scarica e apri il brano dal link incollato', ['Invio']],
     keysBtn: ['Elenco di tutti i tasti rapidi', ['?']],
+    langSel: ['Scegli la lingua'],
     vol: ['Volume generale. Doppio clic: 100%'],
     eqLow: ['Bassi (sotto 250 Hz): basso e cassa. Giù del tutto = spenti. Doppio clic: zero'],
     eqMid: ['Medi (250–3000 Hz): voce, chitarre, piano. Giù del tutto = spenti. Doppio clic: zero'],
@@ -66,15 +67,15 @@
   let timer = null, current = null;
   function show(el) {
     const [text, keys] = TIPS[el.dataset.tip];
-    tip.textContent = text;
+    tip.textContent = L.t(text);
     if (keys) {
       const k = document.createElement('span');
       k.className = 'tip-keys';
-      k.append('Tasto: ');
+      k.append(L.t('Tasto: '));
       keys.forEach((name, i) => {
         if (i) k.append(' · ');
         const kb = document.createElement('kbd');
-        kb.textContent = name;
+        kb.textContent = L.t(name);
         k.append(kb);
       });
       tip.append(k);

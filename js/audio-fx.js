@@ -211,7 +211,7 @@
     } catch (e) {
       console.warn('Catena audio non disponibile', e);
       graph = null;
-      $('soundNote').textContent = 'Il browser non supporta gli effetti audio: restano disponibili loop e velocità.';
+      $('soundNote').textContent = L.t('Il browser non supporta gli effetti audio: restano disponibili loop e velocità.');
     }
     return graph;
   }
@@ -221,12 +221,12 @@
   let stereoInfo = null;   // null = sconosciuto; true/false dopo il caricamento del brano
   function updateIsoUi() {
     const mode = $('iso').value;
-    let help = ISO_HELP[mode] || '';
-    if (stereoInfo === false && STEREO_MODES.includes(mode)) help = 'Questo brano è mono: questa modalità non ha effetto.';
+    let help = L.t(ISO_HELP[mode] || '');
+    if (stereoInfo === false && STEREO_MODES.includes(mode)) help = L.t('Questo brano è mono: questa modalità non ha effetto.');
     $('isoHelp').textContent = help;
     for (const o of $('iso').options) {
-      if (!o.dataset.base) o.dataset.base = o.textContent;
-      o.textContent = o.dataset.base + (stereoInfo === false && STEREO_MODES.includes(o.value) ? ' (serve un brano stereo)' : '');
+      if (!o.dataset.base) o.dataset.base = o.firstChild && o.firstChild.__it !== undefined ? o.firstChild.__it.trim() : o.textContent;
+      o.textContent = L.t(o.dataset.base) + (stereoInfo === false && STEREO_MODES.includes(o.value) ? L.t(' (serve un brano stereo)') : '');
     }
   }
   function connectIso(g, c, mode) {
@@ -269,7 +269,7 @@
   }
 
   // ---------- isolatore a 3 bande ----------
-  const eqText = v => v <= EQ_OFF ? 'spento' : (v > 0 ? '+' : '') + v + ' dB';
+  const eqText = v => v <= EQ_OFF ? L.t('spento') : (v > 0 ? '+' : '') + v + ' dB';
   const eqVals = () => ({ eqLow: +$('eqLow').value, eqMid: +$('eqMid').value, eqHigh: +$('eqHigh').value });
   function applyEq() {
     const vals = eqVals();
@@ -288,7 +288,7 @@
   const shiftRatio = () => Math.pow(2, (+$('semi').value + +$('cents').value / 100) / 12);
   function applyShift() {
     const semi = +$('semi').value, cents = +$('cents').value;
-    $('semiVal').textContent = (semi > 0 ? '+' : '') + semi + (Math.abs(semi) === 1 ? ' semitono' : ' semitoni');
+    $('semiVal').textContent = L.t(Math.abs(semi) === 1 ? '{n} semitono' : '{n} semitoni', { n: (semi > 0 ? '+' : '') + semi });
     $('centsVal').textContent = (cents > 0 ? '+' : '') + cents + ' cent';
     L.store.set('shift', { semi, cents });
     if (!graph) return;
@@ -315,7 +315,7 @@
         console.warn(e);
         g.pitchIn.disconnect();
         g.pitchIn.connect(g.fade);
-        $('soundNote').textContent = 'Trasposizione non disponibile in questo browser.';
+        $('soundNote').textContent = L.t('Trasposizione non disponibile in questo browser.');
       });
     }
   }
@@ -443,6 +443,7 @@
 
   L.fx = {
     ensure, fadeIn, fadeOut, resetFade, playClicks, stopClicks, setBufferInfo,
+    refreshTexts() { applyEq(); applyShift(); updateIsoUi(); },
     get active() { return !!graph; },
     // usati dai test con OfflineAudioContext
     _test: { buildGraph, buildIso, connectIso, bandGains, EQ_OFF },

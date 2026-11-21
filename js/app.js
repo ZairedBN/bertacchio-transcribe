@@ -28,7 +28,7 @@
 
     songKey = opts.key || localKey(file);
     $('filename').textContent = file.name;
-    $('placeholder').textContent = 'Caricamento…';
+    $('placeholder').textContent = L.t('Caricamento…');
     $('placeholder').hidden = false;
     S.region = null; S.duration = 0; S.view = { start: 0, end: 0 }; S.grid = null;
     gridMeta = { steady: null, show: true };
@@ -112,12 +112,12 @@
     const url = linkIn.value.trim();
     if (!url) { linkIn.focus(); return; }
     linkBtn.disabled = true;
-    showMsg('Scaricamento in corso… (può richiedere qualche secondo)');
+    showMsg(L.t('Scaricamento in corso… (può richiedere qualche secondo)'));
     try {
       const j = await L.api('/api/load?url=' + encodeURIComponent(url));
-      showMsg('Caricamento audio…');
+      showMsg(L.t('Caricamento audio…'));
       const r = await fetch(j.file);
-      if (!r.ok) throw new Error('Impossibile leggere il file audio');
+      if (!r.ok) throw new Error(L.t('Impossibile leggere il file audio'));
       const blob = await r.blob();
       await loadSong(new File([blob], j.title || 'audio', { type: blob.type }), { key: j.key, source: url, serverFile: j.key, save: 'put' });
       showMsg('');
@@ -141,7 +141,7 @@
   };
   const dateLabel = ms => {
     const d = new Date(ms);
-    return isNaN(d) ? '' : d.toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    return isNaN(d) ? '' : d.toLocaleString(L.lang, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   };
   const emptyMsg = text => {
     recentList.innerHTML = '';
@@ -155,8 +155,8 @@
     emptyMsg('Caricamento…');
     let items;
     try { items = await L.db.list(); }
-    catch (e) { emptyMsg('I recenti non sono disponibili in questo browser (' + e.message + ').'); return; }
-    if (!items.length) { emptyMsg('Nessun brano recente. I brani che apri compariranno qui.'); return; }
+    catch (e) { emptyMsg(L.t('I recenti non sono disponibili in questo browser ({msg}).', { msg: e.message })); return; }
+    if (!items.length) { emptyMsg(L.t('Nessun brano recente. I brani che apri compariranno qui.')); return; }
     recentList.innerHTML = '';
     for (const it of items) {
       const row = document.createElement('div');
@@ -173,9 +173,9 @@
       const del = document.createElement('button');
       del.className = 'del';
       del.textContent = '✕';
-      del.title = 'Rimuovi dai recenti';
+      del.title = L.t('Rimuovi dai recenti');
       del.addEventListener('click', async () => {
-        if (!confirm('Rimuovere “' + (it.title || it.key) + '” dai recenti?')) return;
+        if (!confirm(L.t('Rimuovere “{name}” dai recenti?', { name: it.title || it.key }))) return;
         try {
           await L.db.remove(it.key);
           if (L.hasServer && it.serverFile) L.api('/api/remove?file=' + encodeURIComponent(it.serverFile), { method: 'POST' }).catch(() => {});
@@ -191,11 +191,11 @@
     closeRecent();
     try {
       const s = await L.db.get(key);
-      if (!s || !s.blob) throw new Error('Brano non trovato');
+      if (!s || !s.blob) throw new Error(L.t('Brano non trovato'));
       await loadSong(new File([s.blob], s.title || 'audio', { type: s.type || s.blob.type }), { key: s.key, source: s.source, save: 'touch' });
       showMsg('');
     } catch (e) {
-      showMsg('Impossibile aprire il brano: ' + e.message, true);
+      showMsg(L.t('Impossibile aprire il brano: {msg}', { msg: e.message }), true);
     }
   }
 
@@ -224,7 +224,8 @@
   // ======================================================================
   // Tempo: BPM, griglia, tap
   // ======================================================================
-  function setNote(t) { const n = $('bpmNote'); n.textContent = t; n.title = t; }
+  let noteRaw = '';   // testo della nota in italiano (chiave), così si può ritradurre al cambio lingua
+  function setNote(t) { noteRaw = t; const n = $('bpmNote'); n.textContent = n.title = L.t(t); }
   const STEADY_MIN = 0.6;    // sotto questa soglia il brano non sembra quantizzato: griglia nascosta
 
   function applyGridShow(show) {
@@ -447,7 +448,7 @@
     if (!sections.length) {
       const s = document.createElement('span');
       s.className = 'muted';
-      s.textContent = 'Seleziona un passaggio e salvalo per ritrovarlo subito.';
+      s.textContent = L.t('Seleziona un passaggio e salvalo per ritrovarlo subito.');
       box.append(s);
       return;
     }
@@ -472,15 +473,15 @@
       name.append(key, txt);
       name.addEventListener('click', () => recallSection(i));
       name.addEventListener('dblclick', () => {
-        const n = prompt('Nuovo nome della sezione:', sec.name);
+        const n = prompt(L.t('Nuovo nome della sezione:'), sec.name);
         if (n && n.trim()) { sec.name = n.trim(); saveSections(); renderChips(); }
       });
       const x = document.createElement('button');
       x.className = 'x';
       x.textContent = '✕';
-      x.title = 'Elimina sezione';
+      x.title = L.t('Elimina sezione');
       x.addEventListener('click', () => {
-        if (!confirm('Eliminare la sezione “' + sec.name + '”?')) return;
+        if (!confirm(L.t('Eliminare la sezione “{name}”?', { name: sec.name }))) return;
         sections.splice(i, 1); saveSections(); renderChips();
       });
       chip.append(name, x);
@@ -505,9 +506,9 @@
   $('saveSection').addEventListener('click', () => {
     const R = S.region;
     if (!R) return;
-    const n = prompt('Nome della sezione (es. Intro, Assolo, Ritornello):', 'Sezione ' + (sections.length + 1));
+    const n = prompt(L.t('Nome della sezione (es. Intro, Assolo, Ritornello):'), L.t('Sezione {n}', { n: sections.length + 1 }));
     if (n === null) return;
-    sections.push({ name: n.trim() || 'Sezione ' + (sections.length + 1), start: R.start, end: R.end, speed: audio.playbackRate });
+    sections.push({ name: n.trim() || L.t('Sezione {n}', { n: sections.length + 1 }), start: R.start, end: R.end, speed: audio.playbackRate });
     sections.sort((a, b) => a.start - b.start);
     saveSections();
     renderChips();
@@ -531,7 +532,7 @@
   const isCountMode = () => /^bar/.test($('pauseMode').value);
 
   function updatePlayLabel() {
-    $('play').textContent = (!audio.paused || waiting) ? '❚❚ Pausa' : '▶ Play';
+    $('play').textContent = L.t((!audio.paused || waiting) ? '❚❚ Pausa' : '▶ Play');
   }
 
   function togglePlay() {
@@ -630,11 +631,11 @@
     if (!count) { hint.textContent = ''; return; }
     if (!S.grid) {
       hint.textContent = S.duration
-        ? 'BPM del brano non disponibili: il conteggio usa 100 BPM. Puoi impostarli con Tap nella riga Tempo.'
-        : 'Il conteggio segue i BPM del brano (rilevati quando lo carichi).';
+        ? L.t('BPM del brano non disponibili: il conteggio usa 100 BPM. Puoi impostarli con Tap nella riga Tempo.')
+        : L.t('Il conteggio segue i BPM del brano (rilevati quando lo carichi).');
     } else {
       const eff = Math.round(S.grid.bpm * audio.playbackRate);
-      hint.textContent = 'Conteggio a ' + eff + ' BPM (' + S.grid.bpm + ' BPM del brano × velocità ' + audio.playbackRate.toFixed(2) + '×).';
+      hint.textContent = L.t('Conteggio a {eff} BPM ({bpm} BPM del brano × velocità {rate}×).', { eff, bpm: S.grid.bpm, rate: audio.playbackRate.toFixed(2) });
     }
   }
   $('pauseMode').addEventListener('change', () => { store.set('pauseMode2', $('pauseMode').value); updateCountUi(); });
@@ -642,7 +643,7 @@
 
   // ---------- contatore ----------
   function resetLoopCount() { loopCount = 0; updateCounter(); }
-  function updateCounter() { $('counter').textContent = S.region && S.duration ? 'Ripetizioni: ' + loopCount : ''; }
+  function updateCounter() { $('counter').textContent = S.region && S.duration ? L.t('Ripetizioni: {n}', { n: loopCount }) : ''; }
 
   // ---------- ciclo principale ----------
   function tick() {
@@ -794,6 +795,24 @@
     isWaiting: () => waiting,
   };
 
+  // ---------- lingua: riscrive i testi generati dal codice ----------
+  function refreshTexts() {
+    if (!songKey) $('filename').textContent = L.t('Nessun brano caricato');
+    if (!$('placeholder').hidden && !songKey) $('placeholder').textContent = L.t('Trascina qui un file audio oppure usa “Apri file…”');
+    setNote(noteRaw);
+    updatePlayLabel();
+    updateCountUi();
+    updateCounter();
+    renderChips();
+    L.trainer.updateUi();
+    L.fx.refreshTexts();
+    L.wave.updateZoomUi();
+    if (!linkMsg.classList.contains('err')) showMsg(!L.served && /Win/.test(navigator.platform) ? L.t('Per caricare brani da un link avvia il looper con avvia-looper.bat.') : '');
+    if (!recentPanel.hidden) renderRecent();
+  }
+  document.addEventListener('looper-lang', refreshTexts);
+  if (!songKey) $('filename').textContent = L.t('Nessun brano caricato');
+
   document.querySelectorAll('details[data-key]').forEach(d => {
     const def = d.dataset.default === 'open' || (d.dataset.default === 'wide' && innerWidth > 700);
     d.open = !!store.get('open:' + d.dataset.key, def);
@@ -821,7 +840,7 @@
   // server Windows: abilita i link e importa i vecchi recenti
   (async () => {
     if (!L.served) {
-      if (/Win/.test(navigator.platform)) showMsg('Per caricare brani da un link avvia il looper con avvia-looper.bat.');
+      if (/Win/.test(navigator.platform)) showMsg(L.t('Per caricare brani da un link avvia il looper con avvia-looper.bat.'));
       return;
     }
     try {

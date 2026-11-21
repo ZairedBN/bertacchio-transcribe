@@ -290,7 +290,9 @@
   #trStartBtn { font-size: 16px; padding: 9px 18px; }
 
   /* tasti rapidi: pulsante, finestra e suggerimenti al passaggio del mouse */
-  .keys-btn { margin-left: auto; color: var(--muted); }
+  .brand-tools { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .keys-btn { color: var(--muted); }
+  select.lang-sel { font-size: 13px; padding: 4px 6px; color: var(--muted); }
   .keys-dlg {
     width: min(860px, calc(100vw - 32px)); max-height: calc(100vh - 48px); overflow-y: auto;
     border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px;
@@ -379,7 +381,7 @@
 <body>
 <main>
   <!-- ===== Testata: titolo e apertura brani ===== -->
-  <header class="brand"><img src="icons/icon.svg" alt=""><h1>BERTACCHIO TRANSCRIBE</h1><button class="small keys-btn" id="keysBtn">⌨ Tasti</button></header>
+  <header class="brand"><img src="icons/icon.svg" alt=""><h1>BERTACCHIO TRANSCRIBE</h1><span class="brand-tools"><select id="langSel" class="lang-sel" aria-label="Lingua"></select><button class="small keys-btn" id="keysBtn">⌨ Tasti</button></span></header>
   <div class="top">
     <div class="file-ctl">
       <label class="btn" for="file">Apri file…</label>
@@ -582,7 +584,7 @@
         </div>
       </section>
 
-      <p class="hint kbd-hint">
+      <p class="hint kbd-hint" data-i18n-html="kbdHint">
         Trascina sulla forma d'onda per selezionare il passaggio, trascina i bordi per regolarlo, clicca per spostarti. Le bande colorate in fondo alla forma d'onda e sotto la panoramica sono le sezioni: un clic le richiama.
         <kbd>Ctrl</kbd>+rotella (o pizzico) per lo zoom, <kbd>Alt</kbd> mentre trascini per non agganciarti ai beat.<br>
         Tasti principali: <kbd>Spazio</kbd> ricomincia · <kbd>P</kbd> / <kbd>Invio</kbd> play/pausa · <kbd>T</kbd> tap tempo ·
@@ -709,6 +711,7 @@
 <audio id="audio" preload="auto" playsinline></audio>
 <script src="js/util.js"></script>
 <script src="js/storage.js"></script>
+<script src="js/i18n.js"></script>
 <script src="js/bpm.js"></script>
 <script src="js/audio-fx.js"></script>
 <script src="js/waveform.js"></script>

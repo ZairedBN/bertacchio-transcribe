@@ -44,14 +44,14 @@ window.Looper = window.Looper || {};
   L.served = location.protocol === 'http:' || location.protocol === 'https:';
 
   L.netError = e => e && e.message === 'Failed to fetch'
-    ? 'Server non raggiungibile: è ancora aperta la finestra di avvia-looper.bat?'
+    ? L.t('Server non raggiungibile: è ancora aperta la finestra di avvia-looper.bat?')
     : (e && e.message) || String(e);
 
   L.api = async (path, opts = {}) => {
     const r = await fetch(path, { ...opts, headers: { 'X-Looper': '1', ...(opts.headers || {}) } });
     let j;
-    try { j = await r.json(); } catch { throw new Error('Risposta non valida dal server (errore ' + r.status + ')'); }
-    if (!r.ok || j.error) throw new Error(j.error || ('Errore ' + r.status));
+    try { j = await r.json(); } catch { throw new Error(L.t('Risposta non valida dal server (errore {n})', { n: r.status })); }
+    if (!r.ok || j.error) throw new Error(j.error || L.t('Errore {n}', { n: r.status }));
     return j;
   };
 
