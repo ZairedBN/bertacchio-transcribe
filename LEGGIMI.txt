@@ -87,6 +87,8 @@ disattivarlo al volo).
 - PRIMA DI RIPARTIRE: scegli "conteggio di 1 (o 2) battute": prima di ogni
   ripetizione senti i click a tempo, che seguono i BPM del brano e la velocita'
   a cui stai suonando. Il primo click di ogni battuta e' piu' acuto.
+  Con "anche al primo Play" il conteggio parte anche quando premi Play o
+  Ricomincia: il brano resta fermo durante i click e parte subito dopo.
 - SEZIONI: seleziona un passaggio e premi "+ Salva sezione" (Intro, Assolo...).
   Ogni sezione ha il suo colore: compare come scheda (con numero, inizio-fine e
   velocita') e come banda colorata sotto la forma d'onda. La ritrovi con un clic
@@ -106,7 +108,12 @@ disattivarlo al volo).
 6. SU TELEFONO E TABLET
 -----------------------
 - Un dito sulla forma d'onda per selezionare, due dita per lo zoom.
-- La barra in basso (Play, Stop, Loop, velocita') resta sempre a portata di mano.
+- La barra in basso resta sempre a portata di mano e fa le veci della tastiera:
+    riga 1:  |<< ricomincia   << indietro   Play   >> avanti   A   B
+    riga 2:  Loop   - velocita' +   Tap   Stop (quadrato)
+  "Indietro"/"Avanti" saltano di una battuta (con la griglia) oppure
+  all'inizio/fine del passaggio e delle sezioni (senza griglia).
+- Tieni premuto un pulsante per sapere a cosa serve.
 
 
 7. TASTI RAPIDI (computer)

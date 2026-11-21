@@ -26,6 +26,11 @@
     play: ['Play / pausa', ['P', 'Invio', '↓']],
     restartBtn: ['Ricomincia dall\'inizio del passaggio (o del brano)', ['Spazio', '↑']],
     stop: ['Stop: ferma e torna all\'inizio del passaggio'],
+    prevBtn: ['Indietro: battuta precedente (con la griglia) oppure inizio di passaggio/sezione', ['←']],
+    nextBtn: ['Avanti: battuta successiva (con la griglia) oppure fine di passaggio/sezione', ['→']],
+    tapMini: ['Batti a tempo (almeno 4 volte) per registrare i BPM', ['T']],
+    aMini: ['Inizio del passaggio dove si trova la testina', ['A']],
+    bMini: ['Fine del passaggio dove si trova la testina', ['B']],
     loopBox: ['Ripeti il passaggio selezionato', ['L']],
     spDown: ['Più lento (5%)', ['−']],
     spUp: ['Più veloce (5%)', ['+']],
@@ -87,6 +92,34 @@
     clearTimeout(timer); timer = null; current = null;
     tip.classList.remove('show');
   }
+
+  // telefono: pressione lunga su un pulsante = spiegazione (e il pulsante non scatta)
+  let press = null, swallowClick = false;
+  document.addEventListener('pointerdown', e => {
+    if (e.pointerType !== 'touch') return;
+    swallowClick = false;
+    const el = e.target.closest && e.target.closest('[data-tip]');
+    if (!el) return;
+    const x = e.clientX, y = e.clientY;
+    press = { el, x, y, timer: setTimeout(() => {
+      swallowClick = true;
+      show(el);
+      if (navigator.vibrate) navigator.vibrate(15);
+      timer = setTimeout(hide, 2500);
+    }, 550) };
+  }, true);
+  const endPress = () => { if (press) { clearTimeout(press.timer); press = null; } };
+  document.addEventListener('pointermove', e => {
+    if (press && Math.hypot(e.clientX - press.x, e.clientY - press.y) > 10) endPress();
+  }, true);
+  document.addEventListener('pointerup', endPress, true);
+  document.addEventListener('pointercancel', endPress, true);
+  document.addEventListener('click', e => {
+    if (!swallowClick) return;
+    swallowClick = false;
+    e.preventDefault(); e.stopPropagation();
+  }, true);
+  document.addEventListener('contextmenu', e => { if (e.target.closest && e.target.closest('[data-tip]')) e.preventDefault(); });
 
   document.addEventListener('pointerover', e => {
     if (e.pointerType !== 'mouse') return;

@@ -84,7 +84,7 @@
   });
 
   function setEnabled(on) {
-    ['play', 'restartBtn', 'stop', 'startIn', 'endIn', 'setA', 'setB', 'zoomIn', 'zoomOut', 'zoomAll'].forEach(id => $(id).disabled = !on);
+    ['play', 'restartBtn', 'prevBtn', 'nextBtn', 'tapMini', 'aMini', 'bMini', 'stop', 'startIn', 'endIn', 'setA', 'setB', 'zoomIn', 'zoomOut', 'zoomAll'].forEach(id => $(id).disabled = !on);
   }
 
   $('file').addEventListener('change', e => {
@@ -313,9 +313,10 @@
     const r = L.tap();
     const btn = $('tapBtn');
     btn.textContent = r.count < 4 ? 'Tap ' + r.count + '/4' : 'Tap ✓';
+    $('tapMini').textContent = r.count < 4 ? r.count + '/4' : '✓';
     clearTimeout(tapReset);
-    btn.classList.add('on');
-    tapReset = setTimeout(() => { btn.textContent = 'Tap'; btn.classList.remove('on'); }, 2000);
+    btn.classList.add('on'); $('tapMini').classList.add('on');
+    tapReset = setTimeout(() => { btn.textContent = 'Tap'; $('tapMini').textContent = 'Tap'; btn.classList.remove('on'); $('tapMini').classList.remove('on'); }, 2000);
     if (!r.bpm) { setNote('continua a battere…'); return; }
     const playing = !audio.paused;
     const bpm = playing ? r.bpm / audio.playbackRate : r.bpm;     // BPM del brano, non della velocità attuale
@@ -326,6 +327,8 @@
   // il tap conta alla pressione (più preciso, senza il ritardo del tocco); il click solo da tastiera
   $('tapBtn').addEventListener('pointerdown', e => { if (e.button === 0) { e.preventDefault(); tap(); } });
   $('tapBtn').addEventListener('click', e => { if (e.detail === 0) tap(); });
+  $('tapMini').addEventListener('pointerdown', e => { if (e.button === 0) { e.preventDefault(); tap(); } });
+  $('tapMini').addEventListener('click', e => { if (e.detail === 0) tap(); });
 
   $('gridShow').addEventListener('change', () => {
     applyGridShow($('gridShow').checked);
@@ -551,7 +554,10 @@
     stopWaiting();
     L.fx.ensure();
     seek(S.region ? S.region.start : 0);
-    if (isCountMode() && $('countFirst').checked) startWaiting(); else play();
+    if (isCountMode() && $('countFirst').checked) {
+      audio.pause();            // durante il conteggio il brano resta fermo
+      startWaiting();
+    } else play();
   }
   $('play').addEventListener('click', togglePlay);
   $('stop').addEventListener('click', stop);
@@ -761,6 +767,10 @@
   $('keysClose').addEventListener('click', () => $('keysDlg').close());
   $('keysDlg').addEventListener('click', e => { if (e.target === $('keysDlg')) $('keysDlg').close(); });
   $('restartBtn').addEventListener('click', restartRegion);
+  $('prevBtn').addEventListener('click', () => arrowJump(-1, false));
+  $('nextBtn').addEventListener('click', () => arrowJump(1, false));
+  $('aMini').addEventListener('click', setA);
+  $('bMini').addEventListener('click', setB);
 
   // togli il focus dai controlli dopo l'uso, così Spazio/frecce restano scorciatoie globali
   document.addEventListener('click', e => { const b = e.target.closest('button'); if (b) b.blur(); });

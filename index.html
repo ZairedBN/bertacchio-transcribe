@@ -202,6 +202,8 @@
   /* barra dei comandi principali */
   .transport { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
   .transport #play { min-width: 112px; }
+  .phone-only { display: none; }
+  .tp-prev, .tp-next { font-size: 20px; line-height: 1; padding-top: 3px; padding-bottom: 7px; }
   .toggle {
     display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border);
     border-radius: 8px; padding: 6px 12px; cursor: pointer; user-select: none; background: var(--input-bg);
@@ -329,7 +331,7 @@
     .touch-hint { display: block; }
   }
   @media (max-width: 700px) {
-    main { padding: 12px 12px 110px; }
+    main { padding: 12px 12px 150px; }
     .brand h1 { font-size: 18px; }
     .wave-bar .filename { flex-basis: 100%; }
     .file-ctl { flex: 1 1 100%; }
@@ -340,13 +342,23 @@
     .transport {
       position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; margin: 0;
       background: var(--panel); border-top: 1px solid var(--border); box-shadow: var(--shadow);
-      padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); flex-wrap: nowrap;
+      padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+      display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px;
     }
-    .transport #play { min-width: 0; flex: 1; }
-    .transport .speed-mini { margin-left: 0; }
+    .transport > *, .transport .speed-mini > * { min-width: 0; margin: 0; padding-left: 0; padding-right: 0; justify-content: center; }
+    .transport .speed-mini { display: contents; }
+    .transport .phone-only { display: block; }
+    .transport button { font-size: 17px; }
+    .transport #play { grid-area: 1 / 3 / 2 / 5; min-width: 0; font-size: 16px; }
+    .tp-restart { grid-area: 1 / 1; } .tp-prev { grid-area: 1 / 2; } .tp-next { grid-area: 1 / 5; }
+    .tp-a { grid-area: 1 / 6; } .tp-b { grid-area: 1 / 7; }
+    .transport #loopBox { grid-area: 2 / 1 / 3 / 3; }
+    #spDown { grid-area: 2 / 3; } #speedMini { grid-area: 2 / 4; align-self: center; text-align: center; min-width: 0; font-size: 14px; }
+    #spUp { grid-area: 2 / 5; } .tp-tap { grid-area: 2 / 6; font-size: 15px !important; } .tp-stop { grid-area: 2 / 7; }
+    .tp-tap.on { border-color: var(--accent); color: var(--accent); font-weight: 600; }
     .edge { flex: 1 1 150px; min-width: 0; }
     .edge input[type=text] { flex: 1; min-width: 0; width: auto; }
-    .arrow, #zoomLabel, .transport .restart { display: none; }
+    .arrow, #zoomLabel { display: none; }
     .ab { display: flex; gap: 8px; width: 100%; }
     .ab button { flex: 1; padding-left: 6px; padding-right: 6px; }
     .wave-bar button.small { padding: 4px 9px; }
@@ -504,15 +516,20 @@
         </div>
 
         <div class="transport" id="transport">
+          <button class="icon tp-restart" id="restartBtn" disabled aria-label="Ricomincia">⏮</button>
+          <button class="icon tp-prev" id="prevBtn" disabled aria-label="Indietro">«</button>
           <button class="primary" id="play" disabled>▶ Play</button>
-          <button id="restartBtn" class="restart" disabled>⏮</button>
-          <button id="stop" disabled>■</button>
+          <button class="icon tp-next" id="nextBtn" disabled aria-label="Avanti">»</button>
+          <button class="icon tp-stop" id="stop" disabled aria-label="Stop">■</button>
           <label class="toggle" id="loopBox"><input type="checkbox" id="loop" checked> Loop</label>
           <div class="speed-mini">
-            <button class="icon" id="spDown" title="Più lento">−</button>
+            <button class="icon" id="spDown" aria-label="Più lento">−</button>
             <span id="speedMini">1.00×</span>
-            <button class="icon" id="spUp" title="Più veloce">+</button>
+            <button class="icon" id="spUp" aria-label="Più veloce">+</button>
           </div>
+          <button class="icon phone-only tp-tap" id="tapMini" disabled>Tap</button>
+          <button class="icon phone-only tp-a" id="aMini" disabled aria-label="Imposta A">A</button>
+          <button class="icon phone-only tp-b" id="bMini" disabled aria-label="Imposta B">B</button>
         </div>
       </section>
 
@@ -610,7 +627,7 @@
           </section>
         </div>
       </dialog>
-      <p class="hint touch-hint">Sul telefono: un dito per selezionare, due dita per lo zoom. Tocca la barra sotto la forma d'onda per spostarti nel brano, le bande colorate per richiamare le sezioni.</p>
+      <p class="hint touch-hint">Sul telefono: un dito per selezionare, due dita per lo zoom. Tocca la barra sotto la forma d'onda per spostarti nel brano, le bande colorate per richiamare le sezioni. Tieni premuto un pulsante per sapere a cosa serve.</p>
     </div>
 
     <aside class="side">
