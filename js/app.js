@@ -6,6 +6,7 @@
 
   let objectUrl = null, prevTime = 0, songKey = null, sections = [];
   let loopCount = 0, waiting = false, waitTimer = null, fadingOut = false, tempoToken = 0;
+  let userPos = false;   // la testina è stata spostata a mano: Play parte da lì anche fuori dal passaggio
   let gridMeta = { steady: null, show: true };   // per brano: quanto è regolare il tempo e se la griglia è visibile
 
   // ======================================================================
@@ -342,7 +343,7 @@
     const R = S.region;
     const changed = !R || Math.abs(R.start - s) > 1e-4 || Math.abs(R.end - e) > 1e-4;
     S.region = { start: s, end: e };
-    if (changed) resetLoopCount();
+    if (changed) { resetLoopCount(); userPos = false; }
     L.wave.invalidate();
     updateRegionUi();
   }
@@ -406,7 +407,7 @@
 
   // collegamenti con la forma d'onda
   Object.assign(L.wave.hooks, {
-    seek,
+    seek: userSeek,
     setRegion,
     clearRegion,
     dragEnd() {
@@ -488,6 +489,7 @@
     L.trainer.onSectionChange();
     if (L.wave.isZoomed() && (sec.start < S.view.start || sec.end > S.view.end)) L.wave.zoomToRegion();
     seek(sec.start);
+    userPos = false;
     if (wasPlaying) play();
   }
 
@@ -505,6 +507,8 @@
   // ======================================================================
   // Riproduzione, loop, conteggio
   // ======================================================================
+  /** spostamento scelto dall'utente (clic sulla forma d'onda, frecce): Play partirà da lì */
+  function userSeek(t) { seek(t); userPos = true; }
   function seek(t) {
     audio.currentTime = clamp(t, 0, S.duration || 0);
     prevTime = audio.currentTime;
@@ -527,8 +531,8 @@
     if (audio.paused) {
       L.fx.ensure();
       const R = S.region;
-      if (inLoopMode() && (audio.currentTime < R.start || audio.currentTime >= R.end - 0.01)) seek(R.start);
-      if (isCountMode() && $('countFirst').checked) startWaiting();
+      if (inLoopMode() && !userPos && (audio.currentTime < R.start || audio.currentTime >= R.end - 0.01)) seek(R.start);
+      if (isCountMode() && $('countFirst').checked) startWaiting(audio.currentTime);
       else play();
     } else {
       audio.pause();
@@ -539,6 +543,7 @@
     stopWaiting();
     audio.pause();
     seek(S.region ? S.region.start : 0);
+    userPos = false;
     resetLoopCount();
   }
   /** riparte dall'inizio del passaggio (con il conteggio, se impostato) */
@@ -572,8 +577,9 @@
     startWaiting();
   }
 
-  // pausa o conteggio, poi si riparte
-  function startWaiting() {
+  /** pausa o conteggio, poi si riparte da `from` (di default l'inizio del passaggio) */
+  function startWaiting(from) {
+    if (from === undefined) from = S.region ? S.region.start : audio.currentTime;
     const mode = $('pauseMode').value;
     waiting = true;
     updatePlayLabel();
@@ -591,7 +597,7 @@
       waitTimer = null;
       if (!waiting) return;
       waiting = false;
-      seek(S.region ? S.region.start : audio.currentTime);
+      seek(from);
       L.fx.fadeIn();
       play();
       updatePlayLabel();
@@ -690,8 +696,8 @@
       case 'b': case 'B': setB(); break;
       case 'l': case 'L': $('loop').checked = !$('loop').checked; break;
       case 't': case 'T': tap(); break;
-      case 'ArrowLeft': e.preventDefault(); seek(audio.currentTime - 2); break;
-      case 'ArrowRight': e.preventDefault(); seek(audio.currentTime + 2); break;
+      case 'ArrowLeft': e.preventDefault(); userSeek(audio.currentTime - 2); break;
+      case 'ArrowRight': e.preventDefault(); userSeek(audio.currentTime + 2); break;
       case '+': case '=': applySpeed(audio.playbackRate + 0.05); break;
       case '-': case '_': applySpeed(audio.playbackRate - 0.05); break;
       default:

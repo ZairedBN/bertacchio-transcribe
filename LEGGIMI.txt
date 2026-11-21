@@ -48,6 +48,8 @@ Se il browser non si apre da solo, vai all'indirizzo:  http://localhost:8765
 
 - LOOP E VELOCITA'
   Premi Play: il passaggio si ripete da solo.
+  Play parte dal punto dove hai cliccato sulla forma d'onda (anche fuori dal
+  passaggio); Stop riporta all'inizio del passaggio.
   Rallenta con - / + nella barra dei comandi o nel riquadro "Velocita' e allenatore".
   "Mantieni intonazione" fa si' che rallentando il brano non diventi piu' grave.
 
