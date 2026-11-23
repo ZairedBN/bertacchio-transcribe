@@ -39,7 +39,7 @@ Ultimo controllo: 23/11/2026, versione online su `main` (SW `looper-v2-8`).
 ## 3. Pulizia / manutenzione
 - [ ] In `dist/` ci sono ancora i vecchi `Looper-MP3.zip` e `Looper-MP3-v2.zip`: superati, si possono cancellare. Lo zip attuale è `Bertacchio-Transcribe-Windows.zip`.
 - [ ] I rami `feature/link`, `feature/studio` e `feature/v2` sono già tutti dentro `main`: si possono eliminare.
-- [ ] Gli strumenti di test (client CDP per Edge headless e script di prova) stanno solo nella scratchpad di sessione e prima o poi vanno persi. Valutare una cartella `tools/test/` nel repository (vedi `CLAUDE.md`).
+- [x] Strumenti di test spostati in `tools/test/` (`run.ps1` lancia tutte le suite; vedi `tools/test/README.md`).
 - [ ] Lo zip Windows va pubblicato come **Release** su GitHub, invece di passarlo a mano.
 
 ---

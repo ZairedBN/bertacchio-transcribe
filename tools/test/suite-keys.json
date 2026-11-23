@@ -1,0 +1,11 @@
+[
+  {"method": "Emulation.setDeviceMetricsOverride", "params": {"width": 1440, "height": 900, "deviceScaleFactor": 1, "mobile": false}},
+  {"method": "Page.reload", "params": {"ignoreCache": true}},
+  {"sleep": 2500},
+  {"eval": "synth.js"},
+  {"eval": "keys.js"},
+  {"screenshot": "keys-tip.png"},
+  {"method": "Runtime.evaluate", "params": {"expression": "document.body.dispatchEvent(new KeyboardEvent('keydown',{key:'?',bubbles:true})); document.getElementById('keysDlg').open"}},
+  {"sleep": 300},
+  {"screenshot": "keys-dlg.png"}
+]

@@ -1,0 +1,7 @@
+[
+  {"method": "Page.enable", "params": {}},
+  {"method": "Page.addScriptToEvaluateOnNewDocument", "params": {"source": "Object.defineProperty(navigator, 'languages', { get: () => ['fr-FR', 'fr'] }); try { localStorage.removeItem('looper:lang'); } catch (e) {}"}},
+  {"method": "Page.reload", "params": {"ignoreCache": true}},
+  {"sleep": 2500},
+  {"eval": "navl.js"}
+]

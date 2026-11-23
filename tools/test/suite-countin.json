@@ -1,0 +1,14 @@
+[
+  {"method": "Emulation.setDeviceMetricsOverride", "params": {"width": 1440, "height": 900, "deviceScaleFactor": 1, "mobile": false}},
+  {"method": "Page.reload", "params": {"ignoreCache": true}},
+  {"sleep": 2500},
+  {"eval": "synth.js"},
+  {"eval": "countin.js"},
+  {"screenshot": "ci-1440.png"},
+  {"method": "Emulation.setDeviceMetricsOverride", "params": {"width": 390, "height": 844, "deviceScaleFactor": 2, "mobile": true}},
+  {"method": "Emulation.setTouchEmulationEnabled", "params": {"enabled": true, "maxTouchPoints": 5}},
+  {"sleep": 600},
+  {"method": "Runtime.evaluate", "params": {"expression": "window.scrollTo(0,0); 'ok'"}},
+  {"sleep": 300},
+  {"screenshot": "ci-390.png"}
+]

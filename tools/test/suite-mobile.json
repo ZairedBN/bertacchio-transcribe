@@ -1,0 +1,13 @@
+[
+  {"method": "Emulation.setDeviceMetricsOverride", "params": {"width": 390, "height": 844, "deviceScaleFactor": 2, "mobile": true}},
+  {"method": "Emulation.setTouchEmulationEnabled", "params": {"enabled": true, "maxTouchPoints": 5}},
+  {"method": "Emulation.setEmulatedMedia", "params": {"features": [{"name": "prefers-color-scheme", "value": "light"}]}},
+  {"method": "Page.reload", "params": {}},
+  {"sleep": 2500},
+  {"eval": "synth.js"},
+  {"eval": "mobile.js"},
+  {"screenshot": "mobile-top.png"},
+  {"eval": "scroll.js"},
+  {"sleep": 300},
+  {"screenshot": "mobile-mid.png"}
+]

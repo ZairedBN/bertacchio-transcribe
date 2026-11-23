@@ -1,0 +1,6 @@
+[
+  {"method": "Page.reload", "params": {"ignoreCache": true}},
+  {"sleep": 2500},
+  {"eval": "synth.js"},
+  {"eval": "startpos.js"}
+]

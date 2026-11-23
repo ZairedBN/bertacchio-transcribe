@@ -1,0 +1,12 @@
+[
+  {"eval": "synth.js"},
+  {"eval": "load-song.js"},
+  {"method": "Page.reload", "params": {"ignoreCache": false}},
+  {"sleep": 3000},
+  {"eval": "after-reload.js"},
+  {"method": "Network.enable", "params": {}},
+  {"method": "Network.emulateNetworkConditions", "params": {"offline": true, "latency": 0, "downloadThroughput": -1, "uploadThroughput": -1}},
+  {"method": "Page.reload", "params": {"ignoreCache": false}},
+  {"sleep": 3000},
+  {"eval": "offline.js"}
+]

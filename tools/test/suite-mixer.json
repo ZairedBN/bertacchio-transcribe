@@ -1,0 +1,5 @@
+[
+  {"method": "Page.reload", "params": {"ignoreCache": true}},
+  {"sleep": 2500},
+  {"eval": "mixtest.js"}
+]

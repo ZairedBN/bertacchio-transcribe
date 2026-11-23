@@ -54,12 +54,12 @@ Ordine degli script (conta): `util → storage → i18n → bpm → audio-fx →
 ## Verifica (prima di dire "fatto")
 - Server di sviluppo: `powershell -ExecutionPolicy Bypass -File server.ps1`, poi http://localhost:8765. Senza server si perde solo "Carica link".
 - Su questa macchina **non c'è Python** e **non c'è `gh`**. Si usano Bash/PowerShell ed Edge headless.
-- **Test nel browser vero**: Edge headless pilotato via DevTools Protocol. Uno script PowerShell apre Edge con `--remote-debugging-port`, si collega al WebSocket ed esegue in sequenza `Runtime.evaluate` (file JS che restituiscono un testo), `Page.captureScreenshot` ed `Emulation.*`.
-  - Larghezze da provare: 1440, 1000, 390 (mobile + touch).
-  - Tema scuro: `Emulation.setEmulatedMedia`.
-  - Offline: `Network.emulateNetworkConditions`.
-  - Lingua: `Page.enable` + `Page.addScriptToEvaluateOnNewDocument` che ridefinisce `navigator.languages`.
-  - Questi strumenti finora sono vissuti nella scratchpad: se mancano, ricrearli (vedi `DEV_NOTES.md` sezione 3).
+- **Test nel browser vero: `tools/test/`** (istruzioni in `tools/test/README.md`).
+  - `powershell -ExecutionPolicy Bypass -File tools\test\run.ps1` lancia tutte le suite. Con `-Suite keys,mobile` se ne scelgono alcune, con `-Url <indirizzo online>` si prova il sito pubblicato.
+  - Il server locale deve essere acceso: dopo un riavvio del PC non lo è. Avviarlo in background con `server.ps1`.
+  - Per una funzione nuova si aggiunge un file `.js` che restituisce righe "valore (atteso …)" e una `suite-<nome>.json`.
+  - Gli screenshot vanno in `tools/test/out/` (non versionata) e si guardano con Read.
+  - Lingua del browser: `Page.enable` + `Page.addScriptToEvaluateOnNewDocument` che ridefinisce `navigator.languages`.
 - **Brano di prova sintetico**: si genera in pagina un `AudioBuffer` (cassa, rullante, hi-hat, accordo) a BPM noti, si converte in WAV e lo si passa a `#file` con `DataTransfer`.
 - Cosa controllare di solito:
   - nessun errore JS;

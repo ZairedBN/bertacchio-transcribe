@@ -1,0 +1,17 @@
+[
+  {"method": "Page.enable", "params": {}},
+  {"method": "Page.addScriptToEvaluateOnNewDocument", "params": {"source": "Object.defineProperty(navigator, 'languages', { get: () => ['fr-FR', 'fr'] }); try { localStorage.removeItem('looper:lang'); } catch {}"}},
+  {"method": "Emulation.setDeviceMetricsOverride", "params": {"width": 1440, "height": 900, "deviceScaleFactor": 1, "mobile": false}},
+  {"method": "Page.reload", "params": {"ignoreCache": true}},
+  {"sleep": 2500},
+  {"eval": "startlang.js"},
+  {"eval": "synth.js"},
+  {"eval": "i18n-test.js"},
+  {"sleep": 400},
+  {"screenshot": "i18n-de.png"},
+  {"method": "Emulation.setDeviceMetricsOverride", "params": {"width": 390, "height": 844, "deviceScaleFactor": 2, "mobile": true}},
+  {"method": "Emulation.setTouchEmulationEnabled", "params": {"enabled": true, "maxTouchPoints": 5}},
+  {"sleep": 600},
+  {"eval": "ovf.js"},
+  {"screenshot": "i18n-de-390.png"}
+]
