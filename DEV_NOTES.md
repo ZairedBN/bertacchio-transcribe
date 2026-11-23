@@ -1,7 +1,7 @@
 # DEV_NOTES — Bertacchio Transcribe
 
 Elenco unico delle cose aperte e delle idee future (sostituisce `DA-FARE.md`, che resta nella cronologia git).
-Ultimo controllo: 23/11/2026, versione locale `looper-v2-9` (online ancora `looper-v2-8`).
+Ultimo controllo: 23/11/2026, versione online su `main` (SW `looper-v2-9`).
 
 ---
 
