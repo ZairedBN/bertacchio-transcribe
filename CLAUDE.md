@@ -3,7 +3,10 @@
 Web app per musicisti: si carica un brano, si sceglie un passaggio, lo si mette in loop e lo si rallenta per studiarlo e trascriverlo.
 - **Online**: https://zairedbn.github.io/bertacchio-transcribe/ (GitHub Pages dal ramo `main`, repo `ZairedBN/bertacchio-transcribe`).
 - **Windows**: zip facoltativo con `avvia-looper.bat` + `server.ps1` + `bin/yt-dlp.exe`, solo per caricare brani da link.
-- Cose aperte e idee future: **`DEV_NOTES.md`**. Va tenuto aggiornato a ogni lavoro.
+- Cose aperte e idee future: **`DEV_NOTES.md`** (ha preso il posto di `DA-FARE.md`). Regole:
+  - quando un punto è fatto e verificato, **si toglie** dalla lista (nello stesso commit della modifica), non si lascia spuntato;
+  - se l'utente ha cancellato dei punti, sono chiusi: non rimetterli;
+  - le cose nuove emerse durante il lavoro si aggiungono nella sezione giusta.
 
 ## L'utente
 - Musicista, non programmatore. Scrive in italiano: **rispondere in italiano semplice**, spiegare cosa cambia per chi usa l'app, non il codice.
