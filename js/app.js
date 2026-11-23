@@ -168,7 +168,7 @@
       const span = document.createElement('span');
       span.textContent = sourceLabel(it.source) + ' · ' + dateLabel(it.lastUsed) + (it.size ? ' · ' + (it.size / 1048576).toFixed(1) + ' MB' : '');
       open.append(strong, span);
-      open.title = it.source || '';
+      open.title = /^https?:/i.test(it.source || '') ? it.source : L.t(it.source || 'File dal dispositivo');
       open.addEventListener('click', () => openRecent(it.key));
       const del = document.createElement('button');
       del.className = 'del';

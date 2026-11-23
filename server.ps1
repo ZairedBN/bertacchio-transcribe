@@ -4,6 +4,7 @@
 
 $ErrorActionPreference = 'Stop'
 $Port      = 8765
+if ($env:LOOPER_PORT) { $Port = [int]$env:LOOPER_PORT }   # porta diversa (prove)
 $Root      = $PSScriptRoot
 $YtDlp     = Join-Path $Root 'bin\yt-dlp.exe'
 $Cache     = Join-Path $Root 'cache'
@@ -40,6 +41,17 @@ function Send-Json($ctx, [int]$status, $obj) {
   $json = ConvertTo-Json -InputObject $obj -Compress -Depth 6
   Send-Bytes $ctx $status 'application/json; charset=utf-8' ($Utf8.GetBytes($json))
 }
+
+# errore per la pagina: `code` permette di tradurlo nella lingua scelta, `error` (italiano) resta per le pagine vecchie
+function Send-Error($ctx, [int]$status, [string]$code, [string]$it, [string]$detail = '') {
+  $obj = @{ error = $it; code = $code }
+  if ($detail) { $obj.detail = $detail; $obj.error = "$it$detail" }
+  Send-Json $ctx $status $obj
+}
+
+# messaggi della finestra: italiano se Windows e' in italiano, altrimenti inglese
+$IsIt = (Get-UICulture).TwoLetterISOLanguageName -eq 'it'
+function Msg([string]$it, [string]$en) { if ($IsIt) { $it } else { $en } }
 
 function Send-File($ctx, [string]$path, [string]$type) {
   $res = $ctx.Response
@@ -126,7 +138,7 @@ function Invoke-YtDlp([string]$url) {
   $lines = @($out -split "`r?`n" | Where-Object { $_.Trim() -ne '' })
   if ($p.ExitCode -ne 0 -or $lines.Count -lt 2) {
     $msg = ($err -split "`r?`n" | Where-Object { $_ -match 'ERROR' } | Select-Object -First 1)
-    if (-not $msg) { $msg = "yt-dlp ha restituito il codice $($p.ExitCode)" }
+    if (-not $msg) { $msg = "yt-dlp exit code $($p.ExitCode)" }
     throw ($msg -replace '^ERROR:\s*', '')
   }
   return @{ title = $lines[0]; path = $lines[-1] }
@@ -137,7 +149,7 @@ function Handle-Api($ctx, [string]$path) {
   $req = $ctx.Request
 
   # header personalizzato: impedisce ad altri siti di usare questo server dal browser
-  if ($req.Headers['X-Looper'] -ne '1') { Send-Json $ctx 403 @{ error = 'Richiesta non consentita' }; return }
+  if ($req.Headers['X-Looper'] -ne '1') { Send-Error $ctx 403 'forbidden' 'Richiesta non consentita'; return }
 
   switch ($path) {
     '/api/ping' {
@@ -146,14 +158,14 @@ function Handle-Api($ctx, [string]$path) {
 
     '/api/load' {
       if (-not (Test-Path $YtDlp)) {
-        Send-Json $ctx 500 @{ error = "Manca bin\yt-dlp.exe. Scaricalo da https://github.com/yt-dlp/yt-dlp/releases/latest e mettilo nella cartella bin." }
+        Send-Error $ctx 500 'no-ytdlp' "Manca bin\yt-dlp.exe. Scaricalo da https://github.com/yt-dlp/yt-dlp/releases/latest e mettilo nella cartella bin."
         return
       }
       $url = $req.QueryString['url']
       $uri = $null
       if (-not $url -or -not [Uri]::TryCreate($url.Trim(), [UriKind]::Absolute, [ref]$uri) -or
           ($uri.Scheme -ne 'http' -and $uri.Scheme -ne 'https') -or $url -match '[\s"]') {
-        Send-Json $ctx 400 @{ error = 'Link non valido: deve iniziare con http:// o https://' }
+        Send-Error $ctx 400 'bad-link' 'Link non valido: deve iniziare con http:// o https://'
         return
       }
       try {
@@ -162,7 +174,7 @@ function Handle-Api($ctx, [string]$path) {
         Add-Recent $name $r.title $uri.AbsoluteUri (Get-Item $r.path).Length
         Send-Json $ctx 200 @{ title = $r.title; file = "/media/$name"; key = $name }
       } catch {
-        Send-Json $ctx 502 @{ error = "Download non riuscito: $($_.Exception.Message)" }
+        Send-Error $ctx 502 'download' 'Download non riuscito: ' $_.Exception.Message
       }
     }
 
@@ -188,14 +200,14 @@ function Handle-Api($ctx, [string]$path) {
     }
 
     '/api/upload' {
-      if ($req.HttpMethod -ne 'POST') { Send-Json $ctx 405 @{ error = 'Usa POST' }; return }
-      if ($req.ContentLength64 -gt 500MB) { Send-Json $ctx 413 @{ error = 'File troppo grande' }; return }
+      if ($req.HttpMethod -ne 'POST') { Send-Error $ctx 405 'method' 'Usa POST'; return }
+      if ($req.ContentLength64 -gt 500MB) { Send-Error $ctx 413 'too-big' 'File troppo grande'; return }
       $title = [Uri]::UnescapeDataString([string]$req.Headers['X-Filename'])
       if (-not $title) { $title = 'audio' }
       $ms = New-Object IO.MemoryStream
       $req.InputStream.CopyTo($ms)
       $bytes = $ms.ToArray()
-      if ($bytes.Length -eq 0) { Send-Json $ctx 400 @{ error = 'File vuoto' }; return }
+      if ($bytes.Length -eq 0) { Send-Error $ctx 400 'empty' 'File vuoto'; return }
       $sha = [Security.Cryptography.SHA1]::Create()
       $hash = -join ($sha.ComputeHash($bytes)[0..7] | ForEach-Object { $_.ToString('x2') })
       $ext = [IO.Path]::GetExtension($title).ToLower()
@@ -214,9 +226,9 @@ function Handle-Api($ctx, [string]$path) {
     }
 
     '/api/remove' {
-      if ($req.HttpMethod -ne 'POST') { Send-Json $ctx 405 @{ error = 'Usa POST' }; return }
+      if ($req.HttpMethod -ne 'POST') { Send-Error $ctx 405 'method' 'Usa POST'; return }
       $name = [string]$req.QueryString['file']
-      if (-not (Test-CacheName $name)) { Send-Json $ctx 400 @{ error = 'Nome file non valido' }; return }
+      if (-not (Test-CacheName $name)) { Send-Error $ctx 400 'bad-name' 'Nome file non valido'; return }
       $file = Join-Path $Cache $name
       if (Test-Path $file -PathType Leaf) { Remove-Item -LiteralPath $file -Force }
       Write-Index @((Read-Index) | Where-Object { $_.file -ne $name })
@@ -224,12 +236,12 @@ function Handle-Api($ctx, [string]$path) {
     }
 
     '/api/open-cache' {
-      if ($req.HttpMethod -ne 'POST') { Send-Json $ctx 405 @{ error = 'Usa POST' }; return }
+      if ($req.HttpMethod -ne 'POST') { Send-Error $ctx 405 'method' 'Usa POST'; return }
       Start-Process explorer.exe -ArgumentList ('"' + $Cache + '"')
       Send-Json $ctx 200 @{ ok = $true }
     }
 
-    default { Send-Json $ctx 404 @{ error = 'Non trovato' } }
+    default { Send-Error $ctx 404 'not-found' 'Non trovato' }
   }
 }
 
@@ -244,7 +256,7 @@ function Handle-Request($ctx) {
     if (Test-Path $file -PathType Leaf) {
       Send-Bytes $ctx 200 $StaticTypes[[IO.Path]::GetExtension($file).ToLower()] ([IO.File]::ReadAllBytes($file))
     } else {
-      Send-Json $ctx 404 @{ error = 'Non trovato' }
+      Send-Error $ctx 404 'not-found' 'Non trovato'
     }
     return
   }
@@ -259,12 +271,12 @@ function Handle-Request($ctx) {
       if (-not $type) { $type = 'application/octet-stream' }
       Send-File $ctx $file $type
     } else {
-      Send-Json $ctx 404 @{ error = 'File non trovato' }
+      Send-Error $ctx 404 'not-found' 'File non trovato'
     }
     return
   }
 
-  Send-Json $ctx 404 @{ error = 'Non trovato' }
+  Send-Error $ctx 404 'not-found' 'Non trovato'
 }
 
 # ---------- avvio ----------
@@ -273,15 +285,15 @@ $listener.Prefixes.Add($Prefix)
 try {
   $listener.Start()
 } catch {
-  Write-Host "Impossibile avviare il server su $Prefix (porta gia' in uso? forse il looper e' gia' aperto)." -ForegroundColor Red
+  Write-Host (Msg "Impossibile avviare il server su $Prefix (porta gia' in uso? forse il looper e' gia' aperto)." "Cannot start the server on $Prefix (port already in use? maybe the looper is already open).") -ForegroundColor Red
   Start-Process $Prefix
-  Read-Host 'Premi Invio per chiudere'
+  Read-Host (Msg 'Premi Invio per chiudere' 'Press Enter to close')
   exit 1
 }
 
-Write-Host "Bertacchio Transcribe attivo su $Prefix" -ForegroundColor Green
-Write-Host 'Chiudi questa finestra (o premi Ctrl+C) per fermarlo.'
-if (-not (Test-Path $YtDlp)) { Write-Host 'Attenzione: bin\yt-dlp.exe non trovato, i link non funzioneranno.' -ForegroundColor Yellow }
+Write-Host (Msg "Bertacchio Transcribe attivo su $Prefix" "Bertacchio Transcribe running on $Prefix") -ForegroundColor Green
+Write-Host (Msg 'Chiudi questa finestra (o premi Ctrl+C) per fermarlo.' 'Close this window (or press Ctrl+C) to stop it.')
+if (-not (Test-Path $YtDlp)) { Write-Host (Msg 'Attenzione: bin\yt-dlp.exe non trovato, i link non funzioneranno.' 'Warning: bin\yt-dlp.exe not found, links will not work.') -ForegroundColor Yellow }
 if ($env:LOOPER_NO_BROWSER -ne '1') { Start-Process $Prefix }
 
 try {
@@ -291,8 +303,8 @@ try {
     $ctx = $task.Result
     try { Handle-Request $ctx }
     catch {
-      Write-Host "Errore: $($_.Exception.Message)" -ForegroundColor Red
-      try { Send-Json $ctx 500 @{ error = $_.Exception.Message } } catch { }
+      Write-Host ((Msg 'Errore: ' 'Error: ') + $_.Exception.Message) -ForegroundColor Red
+      try { Send-Error $ctx 500 'internal' 'Errore interno: ' $_.Exception.Message } catch { }
     }
   }
 } finally {

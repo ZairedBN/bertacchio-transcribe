@@ -47,11 +47,42 @@ window.Looper = window.Looper || {};
     ? L.t('Server non raggiungibile: è ancora aperta la finestra di avvia-looper.bat?')
     : (e && e.message) || String(e);
 
+  // errori del server: il codice si traduce qui, nella lingua scelta (il server scrive solo in italiano)
+  const SERVER_ERRORS = {
+    'forbidden': 'Richiesta non consentita',
+    'no-ytdlp': 'Manca bin\\yt-dlp.exe. Scaricalo da https://github.com/yt-dlp/yt-dlp/releases/latest e mettilo nella cartella bin.',
+    'bad-link': 'Link non valido: deve iniziare con http:// o https://',
+    'too-big': 'File troppo grande',
+    'empty': 'File vuoto',
+    'bad-name': 'Nome file non valido',
+    'not-found': 'Non trovato',
+    'method': 'Richiesta non valida',
+  };
+  // casi frequenti di yt-dlp (messaggi in inglese) → frase chiara
+  const YTDLP_HINTS = [
+    [/unsupported url/i, 'Questo sito non è supportato.'],
+    [/private video|video unavailable|not available in your country|has been removed|does not exist/i, 'Video non disponibile, privato o bloccato nel tuo paese.'],
+    [/sign in|confirm your age|not a bot|members-only|login/i, 'Il video richiede l\'accesso (limite di età o verifica "non sono un robot").'],
+    [/http error 403|requested format is not available|unable to extract|nsig/i, 'Forse yt-dlp è da aggiornare: scarica l\'ultima versione e mettila in bin\\yt-dlp.exe.'],
+    [/http error 404|unable to download webpage/i, 'Pagina non trovata: controlla il link.'],
+    [/timed out|getaddrinfo|network is unreachable|connection/i, 'Problema di connessione: controlla internet e riprova.'],
+  ];
+  function serverError(j, status) {
+    const detail = j.detail ? String(j.detail).replace(/\s*\(caused by [\s\S]*\)\s*$/i, '') : '';
+    if (j.code === 'download') {
+      const hint = YTDLP_HINTS.find(([re]) => re.test(detail));
+      return (L.t('Download non riuscito.') + ' ' + (hint ? L.t(hint[1]) + ' (' + detail + ')' : detail)).trim();
+    }
+    if (j.code === 'internal') return L.t('Errore del server: {d}', { d: detail });
+    if (SERVER_ERRORS[j.code]) return L.t(SERVER_ERRORS[j.code]);
+    return j.error || L.t('Errore {n}', { n: status });   // server vecchio, senza codice
+  }
+
   L.api = async (path, opts = {}) => {
     const r = await fetch(path, { ...opts, headers: { 'X-Looper': '1', ...(opts.headers || {}) } });
     let j;
     try { j = await r.json(); } catch { throw new Error(L.t('Risposta non valida dal server (errore {n})', { n: r.status })); }
-    if (!r.ok || j.error) throw new Error(j.error || L.t('Errore {n}', { n: r.status }));
+    if (!r.ok || j.error) throw new Error(serverError(j, r.status));
     return j;
   };
 
