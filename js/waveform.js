@@ -10,9 +10,12 @@
     grid: null,            // {bpm, offset, beatsPerBar}
     gridShow: true, snap: true,
     sections: [],          // sezioni salvate del brano (per disegnarle)
+    heldTime: null,        // se impostato, la testina si mostra qui (fine del conteggio: il brano scorre muto più indietro)
   };
 
   const audio = $('audio');
+  /** posizione della testina da mostrare */
+  L.shownTime = () => (S.heldTime !== null ? S.heldTime : audio.currentTime);
   const wrap = $('waveWrap'), canvas = $('wave'), ctx = canvas.getContext('2d');
   const ovWrap = $('overviewWrap'), ov = $('overview'), octx = ov.getContext('2d');
   const stat = document.createElement('canvas'), sctx = stat.getContext('2d');    // forma d'onda statica
@@ -260,7 +263,7 @@
       }
     }
     ctx.fillStyle = L.colors.playhead;
-    ctx.fillRect(timeToX(audio.currentTime) - d, 0, 2 * d, H);
+    ctx.fillRect(timeToX(L.shownTime()) - d, 0, 2 * d, H);
 
     // panoramica: tutto il brano, regione, finestra visibile, testina
     const OW = ov.width, OH = ov.height, ox = t => t / S.duration * OW;
@@ -283,7 +286,7 @@
       octx.strokeRect(x1 + 0.75 * d, 0.75 * d, Math.max(2, x2 - x1) - 1.5 * d, OH - 1.5 * d);
     }
     octx.fillStyle = L.colors.playhead;
-    octx.fillRect(ox(audio.currentTime) - d / 2, 0, d, OH);
+    octx.fillRect(ox(L.shownTime()) - d / 2, 0, d, OH);
   }
 
   // ======================================================================

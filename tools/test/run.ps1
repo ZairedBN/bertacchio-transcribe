@@ -6,7 +6,7 @@
 # Il server locale deve essere acceso (server.ps1, porta 8765) se si usa l'URL predefinito.
 # Ogni suite parte con un profilo Edge pulito; gli screenshot vanno in tools\test\out\.
 param(
-  [string[]]$Suite = @('functional', 'offline', 'mobile', 'keys', 'markers', 'countin', 'startpos', 'sections', 'mixer', 'i18n', 'autolang'),
+  [string[]]$Suite = @('functional', 'offline', 'mobile', 'keys', 'markers', 'countin', 'countsync', 'startpos', 'sections', 'mixer', 'i18n', 'autolang'),
   [string]$Url = 'http://localhost:8765/'
 )
 $Suite = $Suite | ForEach-Object { $_ -split "," } | Where-Object { $_ }   # con -File le virgole arrivano in un solo testo

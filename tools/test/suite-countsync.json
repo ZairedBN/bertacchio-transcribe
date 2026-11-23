@@ -1,0 +1,7 @@
+[
+  {"method": "Emulation.setDeviceMetricsOverride", "params": {"width": 1440, "height": 900, "deviceScaleFactor": 1, "mobile": false}},
+  {"method": "Page.reload", "params": {"ignoreCache": true}},
+  {"sleep": 2500},
+  {"eval": "synth.js"},
+  {"eval": "countsync.js"}
+]

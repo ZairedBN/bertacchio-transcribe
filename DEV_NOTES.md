@@ -1,7 +1,7 @@
 # DEV_NOTES — Bertacchio Transcribe
 
 Elenco unico delle cose aperte e delle idee future (sostituisce `DA-FARE.md`, che resta nella cronologia git).
-Ultimo controllo: 23/11/2026, versione online su `main` (SW `looper-v2-8`).
+Ultimo controllo: 23/11/2026, versione locale `looper-v2-9` (online ancora `looper-v2-8`).
 
 ---
 
@@ -17,7 +17,7 @@ Ultimo controllo: 23/11/2026, versione online su `main` (SW `looper-v2-8`).
   - pizzico con dita vere;
   - doppio tocco sui cursori del mixer;
   - pressione lunga per i suggerimenti sul telefono.
-- [ ] **Precisione del conteggio**: la ripartenza usa `setTimeout` e può tardare di qualche decina di ms. Va sentita a orecchio. Se si sente, schedulare l'avvio con l'orologio di `AudioContext`.
+- [ ] **Conteggio a orecchio**: ora il brano parte in anticipo e muto e si apre sul beat 1 con l'orologio audio (test `countsync`: 0–7 ms a 1×, prima −18…+15 ms). Da sentire su un dispositivo vero, anche con cuffie Bluetooth.
 - [ ] **Traduzioni ES/DE/FR**: scritte da Claude, da far rileggere a un madrelingua. La terminologia musicale è la parte più delicata ("pasaje", "Einzähler", "décompte"…).
 
 ## 2. Limiti noti da migliorare
@@ -31,6 +31,7 @@ Ultimo controllo: 23/11/2026, versione online su `main` (SW `looper-v2-8`).
 - [ ] **Memoria su telefoni economici**: il brano viene decodificato tutto (~100 MB per 5 min), più le copie per l'analisi del tempo. Possibile ottimizzazione: analizzare un mono a 11 kHz e liberare le copie.
 - [ ] **Spazio dei Recenti**: fino a 40 brani interi in IndexedDB. Su Windows i brani scaricati restano anche in `cache/` (doppio spazio). Manca un indicatore dello spazio occupato.
 - [ ] **Cursori verticali**: richiedono Chrome/Edge 124+ o Safari 17+; sui browser vecchi appaiono orizzontali, ma funzionano.
+- [ ] **Colpi spostati con "mantieni intonazione"**: a velocità diverse da 1× l'algoritmo del browser che rallenta senza cambiare l'intonazione sposta i colpi di ±15 ms (a 1,5× fino a +30 ms), anche a metà passaggio. Non dipende dal conteggio e non è costante, quindi non si può compensare; con l'intonazione libera lo scarto resta sotto i 10 ms.
 - [ ] **Frecce ↑/↓** restano assegnate ai pedali Bluetooth (play/pausa, ricomincia), quindi da tastiera non fanno scorrere la pagina. È una scelta voluta, da rivalutare se dà fastidio.
 - [ ] **Messaggi del server Windows** (`server.ps1`, errori di yt-dlp) solo in italiano.
 - [ ] I **nomi predefiniti delle sezioni** ("Sezione 1", "Section 1"…) restano nella lingua in cui sono state create: sono dati dell'utente, quindi è voluto.
@@ -78,5 +79,4 @@ Ultimo controllo: 23/11/2026, versione online su `main` (SW `looper-v2-8`).
 
 ### 4.5 Idee minori emerse lungo il lavoro
 - Mappa del tempo per i brani con cambi di tempo (vedi sezione 2).
-- Avvio del conteggio sincronizzato all'orologio audio (vedi sezione 1).
 - Appunti di testo per ogni sezione (andrebbero insieme alla 4.1).

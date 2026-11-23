@@ -381,7 +381,8 @@
   }
 
   // ---------- click del conteggio ----------
-  /** n click distanziati di `interval` secondi; accento sul primo di ogni battuta */
+  /** n click distanziati di `interval` secondi; accento sul primo di ogni battuta.
+      Restituisce l'istante (orologio audio) del beat 1 dopo il conteggio. */
   function playClicks(n, interval, beatsPerBar) {
     if (!ensure()) return;
     const t0 = ac.currentTime + 0.05;
@@ -397,7 +398,20 @@
       osc.stop(t + 0.07);
       clickNodes.push(osc);
     }
-    return 50; // ms di anticipo prima del primo click
+    return t0 + n * interval;
+  }
+  /** orologio audio (secondi), null senza catena */
+  const now = () => (graph ? ac.currentTime : null);
+  /** brano muto adesso, poi si apre esattamente all'istante `t` (orologio audio):
+      serve per farlo partire in anticipo e senza farlo sentire */
+  function muteUntil(t) {
+    if (!graph) return;
+    const g = graph.fade.gain;
+    g.cancelScheduledValues(ac.currentTime);
+    g.setValueAtTime(0, ac.currentTime);
+    g.setValueAtTime(0, t);
+    if ($('fade').checked) g.linearRampToValueAtTime(1, t + L.FADE);
+    else g.setValueAtTime(1, t);
   }
   function stopClicks() {
     clickNodes.forEach(n => { try { n.stop(); } catch { /* già fermo */ } });
@@ -442,7 +456,7 @@
   applyVolume(); applyEq(); applyShift(); updateIsoUi();
 
   L.fx = {
-    ensure, fadeIn, fadeOut, resetFade, playClicks, stopClicks, setBufferInfo,
+    ensure, fadeIn, fadeOut, resetFade, playClicks, stopClicks, setBufferInfo, now, muteUntil,
     refreshTexts() { applyEq(); applyShift(); updateIsoUi(); },
     get active() { return !!graph; },
     // usati dai test con OfflineAudioContext

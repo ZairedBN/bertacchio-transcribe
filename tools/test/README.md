@@ -25,6 +25,7 @@ powershell -ExecutionPolicy Bypass -File tools\test\run.ps1 -Url https://zairedb
 | keys | tasti rapidi, suggerimento sul pulsante Tap, finestra Tasti |
 | markers | clic/tocco sui marcatori delle sezioni, colore del Loop |
 | countin | conteggio a brano fermo con Spazio/Ricomincia, pulsanti « » A del telefono |
+| countsync | precisione del conteggio: registra l'uscita audio e misura lo scarto del beat 1 dopo i click (velocità diverse, passaggio da 0:00, pagina sotto sforzo) |
 | startpos | Play parte dal punto cliccato (dentro/fuori dal passaggio, con conteggio) |
 | sections | schede e bande delle sezioni, screenshot chiaro/scuro/telefono |
 | mixer | catena audio con OfflineAudioContext (`L.fx._test`): risposta piatta, bande spente, niente saturazione, Ascolta, assenza di scatti |

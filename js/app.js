@@ -518,7 +518,18 @@
   // Riproduzione, loop, conteggio
   // ======================================================================
   /** spostamento scelto dall'utente (clic sulla forma d'onda, frecce): Play partirà da lì */
-  function userSeek(t) { seek(t); userPos = true; }
+  function userSeek(t) {
+    userPos = true;
+    if (pre) pre.from = clamp(t, 0, S.duration || 0);   // durante il conteggio: si ripartirà da qui, a tempo
+    if (pre && pre.started) S.heldTime = pre.from;
+    if (pre && pre.started) {   // il brano sta già scorrendo muto: niente seek(), che lo renderebbe udibile
+      pre.last = null; pre.errs = [];
+      audio.currentTime = Math.max(0, pre.from - Math.max(0, pre.T - L.fx.now()) * audio.playbackRate);
+      updateTime(); L.wave.requestDraw();
+      return;
+    }
+    seek(t);
+  }
   function seek(t) {
     audio.currentTime = clamp(t, 0, S.duration || 0);
     prevTime = audio.currentTime;
@@ -596,16 +607,18 @@
     const mode = $('pauseMode').value;
     waiting = true;
     updatePlayLabel();
-    let ms;
     if (/^bar/.test(mode)) {
       const g = S.grid, bpb = g ? g.beatsPerBar : 4, bpm = g ? g.bpm : 100;
       const n = (mode === 'bar2' ? 2 : 1) * bpb;
       const interval = 60 / (bpm * audio.playbackRate);       // i click seguono la velocità attuale
-      const lead = L.fx.playClicks(n, interval, bpb) || 0;
-      ms = lead + n * interval * 1000 - 15;
+      const downbeat = L.fx.playClicks(n, interval, bpb);
+      if (downbeat) { startOnBeat(from, downbeat); return; }
+      waitThen(from, n * interval * 1000);                    // senza catena audio: niente click, solo l'attesa
     } else {
-      ms = 2000;
+      waitThen(from, 2000);
     }
+  }
+  function waitThen(from, ms) {
     waitTimer = setTimeout(() => {
       waitTimer = null;
       if (!waiting) return;
@@ -616,10 +629,63 @@
       updatePlayLabel();
     }, Math.max(0, ms));
   }
+
+  // Ripartenza a tempo dopo il conteggio. Un <audio> non si può far partire a un istante preciso,
+  // il volume sì: il brano parte un po' prima, muto, e si apre esattamente sul beat 1
+  // (stesso orologio dei click). Mentre è muto se ne corregge la posizione.
+  const PREROLL = 0.5;   // secondi di anticipo
+  let pre = null;        // { from, T, started, fixes, last, errs }
+  function startOnBeat(from, T) {
+    const me = pre = { from, T, started: false, fixes: 0, last: null, errs: [] };
+    const rate = () => audio.playbackRate;
+    const finish = () => { if (pre !== me) return; pre = null; S.heldTime = null; waiting = false; updatePlayLabel(); };
+    const step = () => {
+      waitTimer = null;
+      if (pre !== me || !waiting) return;
+      const now = L.fx.now(), left = T - now;
+      const lead = Math.min(PREROLL, me.from / rate());       // prima dell'inizio del brano non si può
+      if (!me.started) {
+        if (left > lead + 0.02) { waitTimer = setTimeout(step, Math.min(40, (left - lead - 0.01) * 1000)); return; }
+        me.started = true;
+        S.heldTime = me.from;                                   // la testina resta ferma dove ripartirà
+        L.fx.muteUntil(T);
+        const pos = Math.max(0, me.from - Math.max(0, left) * rate());
+        audio.currentTime = pos; prevTime = pos; fadingOut = false;
+        play();
+        if (left <= 0) { finish(); return; }
+        waitTimer = setTimeout(step, 10);
+        return;
+      }
+      if (left <= 0.005) { finish(); return; }
+      // correzione della posizione mentre il brano è ancora muto, solo quando scorre con regolarità.
+      // L'orologio audio avanza a scatti (~10 ms): si decide sulla mediana di 5 letture.
+      const t = audio.currentTime, prev = me.last;
+      me.last = { t, now };
+      if (!audio.paused && prev && me.fixes < 3 && left > 0.1) {
+        const speed = (t - prev.t) / (now - prev.now);
+        if (Math.abs(speed / rate() - 1) < 0.3) {
+          me.errs.push(t + left * rate() - me.from);          // dove sarebbe il brano all'istante T
+          if (me.errs.length >= 5) {
+            const err = me.errs.sort((a, b) => a - b)[2];
+            me.errs = [];
+            if (Math.abs(err) > 0.004 * rate()) { audio.currentTime = t - err; prevTime = audio.currentTime; me.fixes++; me.last = null; }
+          }
+        } else me.errs = [];
+      }
+      waitTimer = setTimeout(step, Math.min(9, left * 1000));
+    };
+    step();
+  }
   function stopWaiting() {
     if (waitTimer) clearTimeout(waitTimer);
     waitTimer = null;
     L.fx.stopClicks();
+    if (pre) {
+      // interrotto mentre il brano partiva muto: torna fermo al punto di partenza
+      const from = pre.from, started = pre.started;
+      pre = null; S.heldTime = null;
+      if (started) { audio.pause(); seek(from); }
+    }
     if (waiting) { waiting = false; updatePlayLabel(); }
   }
 
@@ -657,11 +723,11 @@
       if (prevTime <= R.end && t >= R.end) onLoopEnd();
     }
     prevTime = audio.currentTime;
-    if (playing) { L.wave.follow(audio.currentTime, inLoopMode()); updateTime(); }
+    if (playing) { L.wave.follow(L.shownTime(), inLoopMode()); updateTime(); }
     if (playing || L.wave.needsDraw) L.wave.frame();
     requestAnimationFrame(tick);
   }
-  function updateTime() { $('time').textContent = fmt(audio.currentTime) + ' / ' + fmt(S.duration); }
+  function updateTime() { $('time').textContent = fmt(L.shownTime()) + ' / ' + fmt(S.duration); }
 
   // ======================================================================
   // Velocità
