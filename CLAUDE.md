@@ -3,16 +3,18 @@
 Web app per musicisti: si carica un brano, si sceglie un passaggio, lo si mette in loop e lo si rallenta per studiarlo e trascriverlo.
 - **Online**: https://zairedbn.github.io/bertacchio-transcribe/ (GitHub Pages dal ramo `main`, repo `ZairedBN/bertacchio-transcribe`).
 - **Windows**: zip facoltativo con `avvia-looper.bat` + `server.ps1` + `bin/yt-dlp.exe`, solo per caricare brani da link.
-- Cose aperte e idee future: **`DEV_NOTES.md`** (ha preso il posto di `DA-FARE.md`). Regole:
+- Cose aperte (verifiche, limiti, pulizia): **`DEV_NOTES.md`**. Idee e funzioni future non ancora decise: **`IDEE.md`**. Regole per entrambi:
   - quando un punto è fatto e verificato, **si toglie** dalla lista (nello stesso commit della modifica), non si lascia spuntato;
   - se l'utente ha cancellato dei punti, sono chiusi: non rimetterli;
-  - le cose nuove emerse durante il lavoro si aggiungono nella sezione giusta.
+  - le cose nuove emerse durante il lavoro si aggiungono nella sezione giusta;
+  - in `DEV_NOTES.md` la sezione **"Ultime modifiche"** riassume le ultime 1–2 versioni pubblicate; le più vecchie si tolgono.
 
 ## L'utente
 - Musicista, non programmatore. Scrive in italiano: **rispondere in italiano semplice**, spiegare cosa cambia per chi usa l'app, non il codice.
 - Prova le modifiche ricaricando la pagina e dà riscontri a orecchio e a occhio.
 - **Semplicità prima di tutto**: le nuove funzioni non devono complicare il primo utilizzo né l'installazione. Le cose avanzate vanno in pannelli chiusi o menu.
-- **Non implementare senza richiesta** la funzione "progressi / esporta-importa progetto" (vedi `DEV_NOTES.md` 4.1): è rimandata.
+- **Non implementare senza richiesta** la funzione "progressi / esporta-importa progetto" (vedi `IDEE.md`): è rimandata.
+- **Prodotto per chiunque**, non solo per l'utente e i suoi amici: le funzioni devono girare nel browser anche su telefoni economici, senza contare su dispositivi potenti, e **senza server a pagamento**. App installabili e separazione degli strumenti con l'IA sono state accantonate (23/11/2026).
 
 ## Struttura
 ```
@@ -76,5 +78,5 @@ Ordine degli script (conta): `util → storage → i18n → bpm → audio-fx →
 - Si lavora su **`main`**. Commit in italiano, uno per ogni modifica completata e verificata.
 - **Push = pubblicazione**: `git push origin main` aggiorna il sito in 1–2 minuti. Va fatto quando l'utente lo chiede o conferma. L'autenticazione passa da Git Credential Manager.
 - Dopo il push conviene controllare il sito pubblicato: `curl` sull'indirizzo, poi una prova con Edge headless sull'URL online.
-- **Zip Windows** (`dist/Bertacchio-Transcribe-Windows.zip`): cartella "Bertacchio Transcribe" con `index.html`, `manifest.webmanifest`, `sw.js`, `server.ps1`, `avvia-looper.bat`, `LEGGIMI.txt`, `README.txt`, `js/`, `icons/`, `bin/yt-dlp.exe`. Senza `DEV_NOTES.md` e `CLAUDE.md`. Va rifatto quando cambiano i file dell'app e va provato estraendolo e avviando `server.ps1` su un'altra porta.
+- **Zip Windows** (`dist/Bertacchio-Transcribe-Windows.zip`): cartella "Bertacchio Transcribe" con `index.html`, `manifest.webmanifest`, `sw.js`, `server.ps1`, `avvia-looper.bat`, `LEGGIMI.txt`, `README.txt`, `js/`, `icons/`, `bin/yt-dlp.exe`. Senza `DEV_NOTES.md`, `IDEE.md` e `CLAUDE.md`. Va rifatto quando cambiano i file dell'app e va provato estraendolo e avviando `server.ps1` su un'altra porta.
 - Non mettere mai nel repository `cache/` (brani dell'utente), `bin/` o `dist/`.
