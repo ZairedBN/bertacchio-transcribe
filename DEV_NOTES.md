@@ -1,7 +1,7 @@
 # DEV_NOTES — Bertacchio Transcribe
 
 Cose aperte: verifiche, limiti, pulizia. Le idee per il futuro sono in **`IDEE.md`**.
-Ultimo controllo: 24/11/2026, `main` locale (SW `looper-v2-10`, non ancora pubblicata).
+Ultimo controllo: 24/11/2026, versione online (SW `looper-v2-10`).
 
 ---
 
@@ -22,6 +22,7 @@ Si tengono solo le ultime 1–2 versioni; il resto è nella cronologia git.
 - Con la finestra "Tasti" aperta i tasti non comandano più il brano (prima Spazio lo faceva ripartire).
 - Testi tradotti che restavano in italiano: "Impossibile leggere la forma d'onda…", "Caricamento…" nei Recenti.
 - Nuovo test `polish`.
+- **Zip Windows** rifatto: va passato a chi usa la versione Windows.
 
 **v2-9 (23/11/2026)**
 - **Conteggio a tempo**: il brano parte in anticipo e muto e si apre esattamente sul beat 1, seguendo l'orologio dei click.
