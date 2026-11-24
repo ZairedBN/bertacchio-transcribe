@@ -43,7 +43,7 @@
     setA: ['Inizio del passaggio dove si trova la testina (con la griglia: sul beat più vicino)', ['A']],
     setB: ['Fine del passaggio dove si trova la testina (con la griglia: sul beat più vicino)', ['B']],
     clearReg: ['Cancella la selezione', ['Canc']],
-    undoReg: ['Annulla l\'ultima modifica del passaggio', ['Ctrl+Z']],
+    undoReg: ['Annulla l\'ultima modifica (passaggio o sezione eliminata)', ['Ctrl+Z']],
     updSection: ['Salva nella sezione i nuovi bordi e la velocità attuale'],
     pauseMode: ['Cosa fare prima di ogni ripetizione: niente, una pausa o il conteggio a tempo'],
     saveSection: ['Salva il passaggio come sezione (Intro, Assolo…)', ['S']],

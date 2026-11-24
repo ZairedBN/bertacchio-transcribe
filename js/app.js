@@ -31,7 +31,7 @@
     S.region = null; S.duration = 0; S.view = { start: 0, end: 0 }; S.grid = null;
     undoStack.length = redoStack.length = 0;
     editSec = null;
-    applySpeed(audio.playbackRate || 1);
+    applySpeed(store.get('speed:' + songKey, 1));    // ogni brano riparte dalla sua ultima velocità (nuovo: 100%)
     applyPitchPreserve();
     gridMeta = { steady: null, show: true };
     $('gridShow').checked = S.gridShow = true;
@@ -457,9 +457,17 @@
   function stepHistory(from, to) {
     while (from.length && sameReg(from[from.length - 1], S.region)) from.pop();
     if (!from.length) { updateUndoUi(); return; }
-    to.push(S.region ? { ...S.region } : null);
     const r = from.pop();
     lastKind = '';
+    if (r && r.sec) {        // sezione eliminata: annulla la rimette, ripristina la toglie di nuovo
+      const k = sections.indexOf(r.sec);
+      if (k >= 0) { sections.splice(k, 1); if (editSec === r.sec) editSec = null; }
+      else { sections.push(r.sec); sections.sort((a, b) => a.start - b.start); }
+      to.push(r);
+      saveSections(); renderChips(); updateUndoUi();
+      return;
+    }
+    to.push(S.region ? { ...S.region } : null);
     if (r) {
       setRegion(r.start, r.end);
       if (L.wave.isZoomed() && (r.start < S.view.start || r.end > S.view.end)) L.wave.zoomToRegion();
@@ -584,9 +592,11 @@
       x.addEventListener('click', async () => {
         if (!await L.ask(L.t('Eliminare la sezione “{name}”?', { name: sec.name }), { ok: L.t('Elimina'), danger: true })) return;
         const k = sections.indexOf(sec);
-        if (k >= 0) sections.splice(k, 1);
+        if (k < 0) return;
+        sections.splice(k, 1);
         if (editSec === sec) editSec = null;
-        saveSections(); renderChips();
+        undoStack.push({ sec }); redoStack.length = 0; lastKind = '';   // Ctrl+Z / ↶ la rimettono
+        saveSections(); renderChips(); updateUndoUi();
       });
       chip.append(x);
       box.append(chip);
@@ -853,6 +863,7 @@
     updateCountUi();
     // la sezione in ascolto ricorda l'ultima velocità usata (non quella dell'allenatore, che cambia da sola)
     if (!L.trainer.active && S.duration) {
+      if (songKey) store.set('speed:' + songKey, v);
       const i = activeSection();
       if (i >= 0 && Math.abs(sections[i].speed - v) > 1e-3) { sections[i].speed = v; saveSections(); renderChips(); }
     }
@@ -912,6 +923,7 @@
     if (tag === 'select' || tag === 'textarea') return;
     if (tag === 'input' && t.type !== 'checkbox' && t.type !== 'range') return;
     if (t.closest && t.closest('#askDlg')) return;          // finestra per nomi e conferme aperta
+    if ($('keysDlg').open && e.key !== '?') return;         // finestra "Tasti" aperta: i tasti non comandano il brano
     if ((e.ctrlKey || e.metaKey) && !e.altKey && S.duration) {
       const c = e.key.toLowerCase();
       if (c === 'z' && !e.shiftKey) { e.preventDefault(); undo(); return; }

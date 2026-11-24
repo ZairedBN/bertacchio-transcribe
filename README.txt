@@ -41,9 +41,11 @@ If the browser does not open by itself, go to:  http://localhost:8765
   Drag its edges to adjust it, or use the - and + buttons next to start and end
   (one beat at a time). The overview under the waveform shows the whole track.
   The mouse wheel on the waveform zooms; Shift + wheel scrolls.
-  If you get a selection wrong, the  ↶  button (or Ctrl+Z) brings it back.
+  If you get a selection wrong or delete a section by mistake, the  ↶
+  button (or Ctrl+Z) brings it back.
 - LOOP AND SPEED: press Play and the passage repeats by itself. Play starts where
   you clicked on the waveform; Stop goes back to the start of the passage.
+  Each track remembers its last speed; a new track starts at 100%.
   "Keep pitch" stops the track from getting lower when you slow it down.
 - MIXER: Volume, Bass (below 250 Hz), Mids (250-3000 Hz) and Highs (above
   3000 Hz). Pull a fader all the way down to switch that band OFF. Boosting does
@@ -101,7 +103,7 @@ Press  ?  (or the "Keys" button at the top) for the full list in the app.
   A / B ............. set passage start / end at the playhead
                       (with the grid: on the nearest beat)
   Del ............... clear the selection
-  Ctrl+Z / Ctrl+Y ... undo / redo the last change to the passage
+  Ctrl+Z / Ctrl+Y ... undo / redo the last change (passage or deleted section)
   S ................. save the passage as a section
   1 - 9 ............. recall a saved section
   T ................. tap tempo

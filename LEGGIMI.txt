@@ -49,13 +49,15 @@ Se il browser non si apre da solo, vai all'indirizzo:  http://localhost:8765
   Sotto la forma d'onda c'e' la panoramica di tutto il brano:
   toccala per spostarti, trascina il riquadro per scorrere quando sei in zoom.
   Con la rotella del mouse sulla forma d'onda fai lo zoom; Maiusc + rotella scorre.
-  Se sbagli una selezione, il pulsante  ↶  (o Ctrl+Z) la riporta com'era.
+  Se sbagli una selezione o elimini una sezione per errore, il pulsante  ↶
+  (o Ctrl+Z) la riporta com'era.
 
 - LOOP E VELOCITA'
   Premi Play: il passaggio si ripete da solo.
   Play parte dal punto dove hai cliccato sulla forma d'onda (anche fuori dal
   passaggio); Stop riporta all'inizio del passaggio.
   Rallenta con - / + nella barra dei comandi o nel riquadro "Velocita' e allenatore".
+  Ogni brano ricorda la sua ultima velocita'; un brano nuovo parte da 100%.
   "Mantieni intonazione" fa si' che rallentando il brano non diventi piu' grave.
 
 - MIXER
@@ -141,7 +143,7 @@ Passando il mouse su un pulsante compare a cosa serve e con quale tasto.
   A / B ............. imposta inizio / fine del passaggio dove sei ora
                       (con la griglia: sul beat piu' vicino)
   Canc .............. cancella la selezione
-  Ctrl+Z / Ctrl+Y ... annulla / ripristina l'ultima modifica del passaggio
+  Ctrl+Z / Ctrl+Y ... annulla / ripristina l'ultima modifica (passaggio o sezione eliminata)
   S ................. salva il passaggio come sezione
   1 - 9 ............. richiama una sezione salvata
   T ................. tap: batti a tempo per registrare i BPM

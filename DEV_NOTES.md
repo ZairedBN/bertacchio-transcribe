@@ -17,6 +17,9 @@ Si tengono solo le ultime 1–2 versioni; il resto è nella cronologia git.
 - **Finestra nella pagina** al posto di prompt()/confirm() del browser (nome sezione, rinomina, elimina sezione, rimuovi dai recenti): più grande sul telefono, tradotta, Esc/clic fuori per annullare.
 - **Matita ✎** sulla scheda della sezione in ascolto per rinominarla (sul telefono il doppio tocco non funzionava).
 - **Rotella = zoom** sulla forma d'onda (dove si trova il puntatore); Maiusc+rotella o rotella orizzontale per scorrere. A brano intero la rotella in giù lascia scorrere la pagina.
+- **Ogni brano ricorda la sua velocità** (`speed:<chiave>`); un brano nuovo parte da 100% invece di ereditare quella del brano precedente.
+- **Sezione eliminata per errore**: Ctrl+Z / ↶ la rimette (Ctrl+Y la toglie di nuovo).
+- Con la finestra "Tasti" aperta i tasti non comandano più il brano (prima Spazio lo faceva ripartire).
 - Testi tradotti che restavano in italiano: "Impossibile leggere la forma d'onda…", "Caricamento…" nei Recenti.
 - Nuovo test `polish`.
 

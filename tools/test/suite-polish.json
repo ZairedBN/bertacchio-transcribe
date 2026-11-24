@@ -19,5 +19,6 @@
   {"sleep": 400},
   {"eval": "polish-shot.js"},
   {"screenshot": "polish-390.png"},
-  {"eval": "polish-ab.js"}
+  {"eval": "polish-ab.js"},
+  {"eval": "polish3.js"}
 ]
