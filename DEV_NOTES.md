@@ -1,12 +1,24 @@
 # DEV_NOTES — Bertacchio Transcribe
 
 Cose aperte: verifiche, limiti, pulizia. Le idee per il futuro sono in **`IDEE.md`**.
-Ultimo controllo: 23/11/2026, versione online su `main` (SW `looper-v2-9`).
+Ultimo controllo: 24/11/2026, `main` locale (SW `looper-v2-10`, non ancora pubblicata).
 
 ---
 
 ## Ultime modifiche
 Si tengono solo le ultime 1–2 versioni; il resto è nella cronologia git.
+
+**v2-10 (24/11/2026)** — rifiniture contro le piccole frustrazioni
+- **Annulla / ripristina il passaggio**: Ctrl+Z / Ctrl+Y e pulsante ↶ accanto a "Cancella". Vale per trascinamenti, A/B, −/+ (tenere premuto conta come un passo solo), Canc, campi inizio/fine e richiamo delle sezioni.
+- **Aggiorna sezione**: se si ritoccano i bordi della sezione in ascolto compare "↻ Aggiorna «nome»", che salva i nuovi bordi e la velocità.
+- **La sezione ricorda l'ultima velocità usata** su di essa (non quella dell'allenatore).
+- **A/B al volo sul beat**: con griglia e aggancio attivi, A e B durante l'ascolto vanno sul beat più vicino a quello che si è sentito (si tolgono 50 ms di reazione + il ritardo d'uscita audio). Da fermo si agganciano solo se già vicini a un beat.
+- **"Il beat 1 è qui"** sceglie il beat della griglia più vicino a quello sentito: sposta la battuta senza rovinare la fase dei beat.
+- **Finestra nella pagina** al posto di prompt()/confirm() del browser (nome sezione, rinomina, elimina sezione, rimuovi dai recenti): più grande sul telefono, tradotta, Esc/clic fuori per annullare.
+- **Matita ✎** sulla scheda della sezione in ascolto per rinominarla (sul telefono il doppio tocco non funzionava).
+- **Rotella = zoom** sulla forma d'onda (dove si trova il puntatore); Maiusc+rotella o rotella orizzontale per scorrere. A brano intero la rotella in giù lascia scorrere la pagina.
+- Testi tradotti che restavano in italiano: "Impossibile leggere la forma d'onda…", "Caricamento…" nei Recenti.
+- Nuovo test `polish`.
 
 **v2-9 (23/11/2026)**
 - **Conteggio a tempo**: il brano parte in anticipo e muto e si apre esattamente sul beat 1, seguendo l'orologio dei click.
@@ -31,6 +43,10 @@ Si tengono solo le ultime 1–2 versioni; il resto è nella cronologia git.
   - doppio tocco sui cursori del mixer;
   - pressione lunga per i suggerimenti sul telefono.
 - [ ] **Conteggio a orecchio**: ora il brano parte in anticipo e muto e si apre sul beat 1 con l'orologio audio (test `countsync`: 0–7 ms a 1×, prima −18…+15 ms). Da sentire su un dispositivo vero, anche con cuffie Bluetooth.
+- [ ] **Rifiniture v2-10 a orecchio e a mano**:
+  - A/B premuti durante l'ascolto: cadono sul beat giusto o su quello dopo? (compensazione di 50 ms + ritardo d'uscita, da provare anche con cuffie Bluetooth);
+  - rotella = zoom: con il **trackpad del Mac** lo scorrimento verticale a due dita ora fa zoom sull'onda. Se dà fastidio, tornare a Ctrl+rotella solo per il trackpad;
+  - finestra dei nomi sul telefono vero (tastiera che si apre, pulsanti comodi).
 - [ ] **Traduzioni ES/DE/FR**: scritte da Claude, da far rileggere a un madrelingua. La terminologia musicale è la parte più delicata ("pasaje", "Einzähler", "décompte"…).
 
 ## 2. Limiti noti da migliorare

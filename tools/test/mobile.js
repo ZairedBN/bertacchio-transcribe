@@ -14,7 +14,7 @@
   $('file').files = dt.files; $('file').dispatchEvent(new Event('change'));
   for (let i = 0; i < 100 && !Looper.state.grid; i++) await wait(100);
   const S = Looper.state, b = k => S.grid.offset + k * 60 / S.grid.bpm;
-  window.prompt = (m, d) => d;
+  Looper.ask = (m, o) => Promise.resolve(o && o.value !== undefined ? o.value : true);
   Looper.wave.hooks.setRegion(b(8), b(16));
   $('saveSection').click();
   document.querySelector('#trainerBox').open = true;

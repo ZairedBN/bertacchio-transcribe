@@ -21,8 +21,8 @@
   key('ArrowLeft', { shiftKey: true }); r.push('Maiusc+← : ' + f(a.currentTime) + ' (atteso 2.50)');
   // senza griglia
   key('g'); r.push('G: griglia visibile ' + S.gridShow);
-  window.prompt = (m, d) => d;
-  H.setRegion(12, 16); key('s'); H.setRegion(4.5, 8.5);
+  Looper.ask = (m, o) => Promise.resolve(o && o.value !== undefined ? o.value : true);
+  H.setRegion(12, 16); key('s'); await wait(50); H.setRegion(4.5, 8.5);
   H.seek(5); key('ArrowRight'); r.push('→ da 5 senza griglia: ' + f(a.currentTime) + ' (atteso 8.50, fine passaggio)');
   key('ArrowRight'); r.push('→ ancora: ' + f(a.currentTime) + ' (atteso 12.00, sezione)');
   key('ArrowLeft'); r.push('← : ' + f(a.currentTime) + ' (atteso 8.50)');

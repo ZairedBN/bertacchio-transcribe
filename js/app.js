@@ -6,6 +6,7 @@
 
   let objectUrl = null, prevTime = 0, songKey = null, sections = [];
   let loopCount = 0, waiting = false, waitTimer = null, fadingOut = false, tempoToken = 0;
+  let editSec = null;    // sezione richiamata per ultima: se se ne ritoccano i bordi, si può aggiornarla
   let userPos = false;   // la testina è stata spostata a mano: Play parte da lì anche fuori dal passaggio
   let gridMeta = { steady: null, show: true };   // per brano: quanto è regolare il tempo e se la griglia è visibile
 
@@ -23,14 +24,15 @@
     if (objectUrl) URL.revokeObjectURL(objectUrl);
     objectUrl = URL.createObjectURL(file);
     audio.src = objectUrl;
-    applySpeed(audio.playbackRate || 1);
-    applyPitchPreserve();
-
     songKey = opts.key || localKey(file);
     $('filename').textContent = file.name;
     $('placeholder').textContent = L.t('Caricamento…');
     $('placeholder').hidden = false;
     S.region = null; S.duration = 0; S.view = { start: 0, end: 0 }; S.grid = null;
+    undoStack.length = redoStack.length = 0;
+    editSec = null;
+    applySpeed(audio.playbackRate || 1);
+    applyPitchPreserve();
     gridMeta = { steady: null, show: true };
     $('gridShow').checked = S.gridShow = true;
     setNote('');
@@ -63,7 +65,7 @@
       L.fx.setBufferInfo(buffer);
       $('placeholder').hidden = true;
     } catch {
-      $('placeholder').textContent = 'Impossibile leggere la forma d\'onda (il brano potrebbe comunque essere riproducibile).';
+      $('placeholder').textContent = L.t('Impossibile leggere la forma d\'onda (il brano potrebbe comunque essere riproducibile).');
     }
     setEnabled(true);
     updateRegionUi();
@@ -152,7 +154,7 @@
   };
 
   async function renderRecent() {
-    emptyMsg('Caricamento…');
+    emptyMsg(L.t('Caricamento…'));
     let items;
     try { items = await L.db.list(); }
     catch (e) { emptyMsg(L.t('I recenti non sono disponibili in questo browser ({msg}).', { msg: e.message })); return; }
@@ -175,7 +177,7 @@
       del.textContent = '✕';
       del.title = L.t('Rimuovi dai recenti');
       del.addEventListener('click', async () => {
-        if (!confirm(L.t('Rimuovere “{name}” dai recenti?', { name: it.title || it.key }))) return;
+        if (!await L.ask(L.t('Rimuovere “{name}” dai recenti?', { name: it.title || it.key }), { ok: L.t('Rimuovi'), danger: true })) return;
         try {
           await L.db.remove(it.key);
           if (L.hasServer && it.serverFile) L.api('/api/remove?file=' + encodeURIComponent(it.serverFile), { method: 'POST' }).catch(() => {});
@@ -212,7 +214,8 @@
       if (open && onOpen) onOpen();
     });
     document.addEventListener('click', e => {
-      if (!panel.hidden && !panel.contains(e.target) && !btn.contains(e.target)) close();
+      // i clic nella finestra di conferma (es. "Rimuovere dai recenti?") non chiudono il menu
+      if (!panel.hidden && !panel.contains(e.target) && !btn.contains(e.target) && !e.target.closest('dialog')) close();
     });
     return close;
   }
@@ -303,8 +306,28 @@
   });
   $('beatOne').addEventListener('click', () => {
     if (!S.grid) return;
-    setGrid({ ...S.grid, offset: audio.currentTime });
+    // di solito i beat sono già giusti e va spostata solo la battuta: si sceglie il beat più vicino
+    // a quello che si è sentito (tenendo conto del ritardo di reazione durante l'ascolto)
+    const t = heardTime(), bt = L.nearestBeat(S.grid, t);
+    setGrid({ ...S.grid, offset: Math.abs(bt - t) <= L.beatLen(S.grid) * 0.3 ? bt : t });
   });
+
+  /** punto del brano che si stava sentendo quando si è premuto: durante l'ascolto
+      il suono esce in ritardo (casse/cuffie) e il dito arriva un po' dopo il colpo */
+  const REACTION = 0.05;
+  function heardTime() {
+    const t = audio.currentTime;
+    if (audio.paused) return t;
+    return Math.max(0, t - (REACTION + L.fx.latency()) * audio.playbackRate);
+  }
+  /** punto per A/B: con griglia e aggancio attivi va sul beat; da fermo solo se è già vicino a un beat */
+  function markTime() {
+    const t = audio.currentTime, g = S.grid;
+    if (!g || !S.gridShow || !S.snap) return t;
+    if (!audio.paused) return clamp(L.nearestBeat(g, heardTime()), 0, S.duration);
+    const bt = L.nearestBeat(g, t);
+    return Math.abs(bt - t) <= L.beatLen(g) * 0.15 ? clamp(bt, 0, S.duration) : t;
+  }
 
   // il pulsante ha larghezza fissa e la nota sta dopo: niente si sposta mentre batti
   // modalità tap: dopo il primo tocco su Tap (o T), per 2 s anche Spazio batte il tempo invece di play/pausa
@@ -364,6 +387,7 @@
     ['clearReg', 'saveSection', 'startDown', 'startUp', 'endDown', 'endUp'].forEach(id => $(id).disabled = !R);
     L.wave.updateZoomUi();
     updateCounter();
+    updateUndoUi();
     renderChips();
   }
   function commitInputs() {
@@ -371,7 +395,7 @@
     let s = parseTime($('startIn').value), e = parseTime($('endIn').value);
     if (isNaN(s)) s = R ? R.start : 0;
     if (isNaN(e)) e = R ? R.end : S.duration;
-    if (e - s >= 0.05) setRegion(s, e);
+    if (e - s >= 0.05 && !sameReg(R, { start: s, end: e })) { remember(); setRegion(s, e); }
     updateRegionUi();
   }
   ['startIn', 'endIn'].forEach(id => {
@@ -389,6 +413,7 @@
     const g = S.gridShow ? S.grid : null;      // a beat solo se la griglia è visibile
     let t2 = g ? L.stepBeat(g, t, dir) : t + dir * 0.05;
     t2 = clamp(t2, 0, S.duration);
+    remember('nudge-' + edge);
     if (edge === 'start' && t2 < R.end - 0.05) setRegion(t2, R.end);
     if (edge === 'end' && t2 > R.start + 0.05) setRegion(R.start, t2);
   }
@@ -398,22 +423,60 @@
   L.holdRepeat($('endUp'), () => nudge('end', 1));
 
   function setA() {
-    const t = audio.currentTime, R = S.region;
-    if (R && t < R.end) setRegion(t, R.end); else setRegion(t, S.duration);
+    const t = markTime(), R = S.region;
+    remember();
+    if (R && t < R.end - 0.05) setRegion(t, R.end); else setRegion(t, S.duration);
   }
   function setB() {
-    const t = audio.currentTime, R = S.region;
-    if (R && t > R.start) setRegion(R.start, t); else setRegion(0, t);
+    const t = markTime(), R = S.region;
+    remember();
+    if (R && t > R.start + 0.05) setRegion(R.start, t); else setRegion(0, t);
   }
+  function userClear() { if (S.region) { remember(); clearRegion(); } }
   $('setA').addEventListener('click', setA);
   $('setB').addEventListener('click', setB);
-  $('clearReg').addEventListener('click', clearRegion);
+  $('clearReg').addEventListener('click', userClear);
+
+  // ---------- annulla / ripristina le modifiche al passaggio ----------
+  const undoStack = [], redoStack = [];
+  const sameReg = (a, b) => (!a && !b) || (!!a && !!b && Math.abs(a.start - b.start) < 1e-4 && Math.abs(a.end - b.end) < 1e-4);
+  let lastKind = '', lastAt = 0;
+  /** da chiamare prima di ogni modifica fatta dall'utente. Le modifiche ripetute dello
+      stesso tipo (tenere premuto − / +) diventano un solo passo */
+  function remember(kind = '') {
+    const now = performance.now();
+    const merge = kind && kind === lastKind && now - lastAt < 1000;
+    lastKind = kind; lastAt = now;
+    if (merge) return;
+    const cur = S.region ? { ...S.region } : null;
+    if (!undoStack.length || !sameReg(undoStack[undoStack.length - 1], cur)) undoStack.push(cur);
+    if (undoStack.length > 50) undoStack.shift();
+    redoStack.length = 0;
+    updateUndoUi();
+  }
+  function stepHistory(from, to) {
+    while (from.length && sameReg(from[from.length - 1], S.region)) from.pop();
+    if (!from.length) { updateUndoUi(); return; }
+    to.push(S.region ? { ...S.region } : null);
+    const r = from.pop();
+    lastKind = '';
+    if (r) {
+      setRegion(r.start, r.end);
+      if (L.wave.isZoomed() && (r.start < S.view.start || r.end > S.view.end)) L.wave.zoomToRegion();
+      if (inLoopMode() && !audio.paused && !waiting && (audio.currentTime < r.start || audio.currentTime > r.end)) seek(r.start);
+    } else clearRegion();
+  }
+  const undo = () => stepHistory(undoStack, redoStack);
+  const redo = () => stepHistory(redoStack, undoStack);
+  function updateUndoUi() { $('undoReg').disabled = !undoStack.some(r => !sameReg(r, S.region)); }
+  $('undoReg').addEventListener('click', undo);
 
   // collegamenti con la forma d'onda
   Object.assign(L.wave.hooks, {
     seek: userSeek,
     setRegion,
     clearRegion,
+    beginEdit: () => remember(),     // inizio di un trascinamento sulla forma d'onda
     dragEnd() {
       const R = S.region;
       if (R && R.end - R.start < 0.05) clearRegion();
@@ -433,14 +496,43 @@
   }
   const saveSections = () => { if (songKey) store.set('sections:' + songKey, sections); };
 
+  const isSecRegion = (sec, R) => !!R && Math.abs(R.start - sec.start) < 0.01 && Math.abs(R.end - sec.end) < 0.01;
+  /** indice della sezione che coincide con il passaggio attuale (-1 = nessuna) */
+  const activeSection = () => sections.findIndex(s => isSecRegion(s, S.region));
+
+  async function renameSection(sec) {
+    const n = await L.ask(L.t('Nuovo nome della sezione:'), { value: sec.name });
+    if (n && n.trim()) { sec.name = n.trim(); saveSections(); renderChips(); }
+  }
+
+  /** pulsante "Aggiorna": il passaggio è stato ritoccato partendo da una sezione */
+  function updateSectionBtn() {
+    const btn = $('updSection'), R = S.region;
+    const sec = editSec && sections.includes(editSec) ? editSec : null;
+    const show = !!(R && sec && !isSecRegion(sec, R) && R.start < sec.end && R.end > sec.start);
+    btn.hidden = !show;
+    if (!show) return;
+    btn.textContent = L.t('↻ Aggiorna “{name}”', { name: sec.name });
+    btn.style.setProperty('--upd-c', L.sectionColorVar(sections.indexOf(sec)));
+  }
+  $('updSection').addEventListener('click', () => {
+    const R = S.region, sec = editSec;
+    if (!R || !sec || !sections.includes(sec)) return;
+    sec.start = R.start; sec.end = R.end;
+    if (!L.trainer.active) sec.speed = audio.playbackRate;
+    sections.sort((a, b) => a.start - b.start);
+    saveSections();
+    renderChips();
+  });
+
   function renderChips() {
     const box = $('chips');
     box.innerHTML = '';
     S.sections = sections;
     L.wave.invalidate();
+    updateSectionBtn();
     // il pulsante Loop prende il colore della sezione in ascolto
-    const Rc = S.region;
-    const active = Rc ? sections.findIndex(s => Math.abs(Rc.start - s.start) < 0.01 && Math.abs(Rc.end - s.end) < 0.01) : -1;
+    const active = activeSection();
     const loopBox = $('loopBox');
     if (active >= 0) loopBox.style.setProperty('--loop-c', L.sectionColorVar(active));
     else loopBox.style.removeProperty('--loop-c');
@@ -457,7 +549,8 @@
       const chip = document.createElement('span');
       chip.className = 'chip';
       chip.style.setProperty('--c', L.sectionColorVar(i));
-      if (R && Math.abs(R.start - sec.start) < 0.01 && Math.abs(R.end - sec.end) < 0.01) chip.classList.add('on');
+      const on = isSecRegion(sec, R);
+      if (on) chip.classList.add('on');
       const name = document.createElement('button');
       name.className = 'name';
       const key = document.createElement('span');
@@ -472,19 +565,30 @@
       txt.append(strong, small);
       name.append(key, txt);
       name.addEventListener('click', () => recallSection(i));
-      name.addEventListener('dblclick', () => {
-        const n = prompt(L.t('Nuovo nome della sezione:'), sec.name);
-        if (n && n.trim()) { sec.name = n.trim(); saveSections(); renderChips(); }
-      });
+      name.addEventListener('dblclick', () => renameSection(sec));
+      chip.append(name);
+      // sulla sezione in ascolto compare la matita per rinominarla (sul telefono il doppio tocco non va)
+      if (on) {
+        const ren = document.createElement('button');
+        ren.className = 'ren';
+        ren.textContent = '✎';
+        ren.title = L.t('Rinomina sezione');
+        ren.setAttribute('aria-label', ren.title);
+        ren.addEventListener('click', () => renameSection(sec));
+        chip.append(ren);
+      }
       const x = document.createElement('button');
       x.className = 'x';
       x.textContent = '✕';
       x.title = L.t('Elimina sezione');
-      x.addEventListener('click', () => {
-        if (!confirm(L.t('Eliminare la sezione “{name}”?', { name: sec.name }))) return;
-        sections.splice(i, 1); saveSections(); renderChips();
+      x.addEventListener('click', async () => {
+        if (!await L.ask(L.t('Eliminare la sezione “{name}”?', { name: sec.name }), { ok: L.t('Elimina'), danger: true })) return;
+        const k = sections.indexOf(sec);
+        if (k >= 0) sections.splice(k, 1);
+        if (editSec === sec) editSec = null;
+        saveSections(); renderChips();
       });
-      chip.append(name, x);
+      chip.append(x);
       box.append(chip);
     });
   }
@@ -494,8 +598,10 @@
     if (!sec || !S.duration) return;
     const wasPlaying = !audio.paused || waiting;
     stopWaiting();
+    if (!isSecRegion(sec, S.region)) remember();
+    editSec = sec;
+    setRegion(sec.start, sec.end);          // prima il passaggio, poi la velocità (che si salva nella sezione attiva)
     if (!L.trainer.active) applySpeed(sec.speed);
-    setRegion(sec.start, sec.end);
     L.trainer.onSectionChange();
     if (L.wave.isZoomed() && (sec.start < S.view.start || sec.end > S.view.end)) L.wave.zoomToRegion();
     seek(sec.start);
@@ -503,12 +609,14 @@
     if (wasPlaying) play();
   }
 
-  $('saveSection').addEventListener('click', () => {
+  $('saveSection').addEventListener('click', async () => {
     const R = S.region;
     if (!R) return;
-    const n = prompt(L.t('Nome della sezione (es. Intro, Assolo, Ritornello):'), L.t('Sezione {n}', { n: sections.length + 1 }));
+    const n = await L.ask(L.t('Nome della sezione (es. Intro, Assolo, Ritornello):'), { value: L.t('Sezione {n}', { n: sections.length + 1 }), ok: L.t('Salva') });
     if (n === null) return;
-    sections.push({ name: n.trim() || L.t('Sezione {n}', { n: sections.length + 1 }), start: R.start, end: R.end, speed: audio.playbackRate });
+    const sec = { name: n.trim() || L.t('Sezione {n}', { n: sections.length + 1 }), start: R.start, end: R.end, speed: audio.playbackRate };
+    sections.push(sec);
+    editSec = sec;
     sections.sort((a, b) => a.start - b.start);
     saveSections();
     renderChips();
@@ -743,6 +851,11 @@
     document.querySelectorAll('.preset').forEach(b => b.classList.toggle('on', Math.abs(parseFloat(b.dataset.v) - v) < 0.001));
     L.trainer.updateUi();
     updateCountUi();
+    // la sezione in ascolto ricorda l'ultima velocità usata (non quella dell'allenatore, che cambia da sola)
+    if (!L.trainer.active && S.duration) {
+      const i = activeSection();
+      if (i >= 0 && Math.abs(sections[i].speed - v) > 1e-3) { sections[i].speed = v; saveSections(); renderChips(); }
+    }
   }
   function applyPitchPreserve() {
     const on = $('pitch').checked;
@@ -798,6 +911,12 @@
     const t = e.target, tag = (t.tagName || '').toLowerCase();
     if (tag === 'select' || tag === 'textarea') return;
     if (tag === 'input' && t.type !== 'checkbox' && t.type !== 'range') return;
+    if (t.closest && t.closest('#askDlg')) return;          // finestra per nomi e conferme aperta
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && S.duration) {
+      const c = e.key.toLowerCase();
+      if (c === 'z' && !e.shiftKey) { e.preventDefault(); undo(); return; }
+      if (c === 'y' || (c === 'z' && e.shiftKey)) { e.preventDefault(); redo(); return; }
+    }
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.key === 'Escape') { closeAllPopovers(); return; }
     if (e.key === '?') { e.preventDefault(); openKeys(); return; }
@@ -816,11 +935,11 @@
       case 'ArrowRight': e.preventDefault(); arrowJump(1, e.shiftKey); break;
       case 'a': setA(); break;
       case 'b': setB(); break;
-      case 'Delete': case 'Backspace': e.preventDefault(); clearRegion(); break;
+      case 'Delete': case 'Backspace': e.preventDefault(); userClear(); break;
       case 'l': $('loop').checked = !$('loop').checked; break;
       case 't': if (!e.repeat) tap(); break;
       case 'g': $('gridShow').checked = !$('gridShow').checked; $('gridShow').dispatchEvent(new Event('change')); break;
-      case 's': if (S.region) $('saveSection').click(); break;
+      case 's': e.preventDefault(); if (S.region) $('saveSection').click(); break;   // senza preventDefault la «s» finirebbe nel nome
       case 'z': toggleZoom(); break;
       case '+': case '=': applySpeed(audio.playbackRate + 0.05); break;
       case '-': case '_': applySpeed(audio.playbackRate - 0.05); break;

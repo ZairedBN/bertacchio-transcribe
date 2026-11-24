@@ -1,0 +1,23 @@
+[
+  {"method": "Emulation.setDeviceMetricsOverride", "params": {"width": 1440, "height": 900, "deviceScaleFactor": 1, "mobile": false}},
+  {"method": "Page.reload", "params": {"ignoreCache": true}},
+  {"sleep": 2500},
+  {"eval": "synth.js"},
+  {"eval": "polish.js"},
+  {"eval": "polish2.js"},
+  {"eval": "polish-s-pre.js"},
+  {"method": "Input.dispatchKeyEvent", "params": {"type": "keyDown", "key": "s", "code": "KeyS", "text": "s", "windowsVirtualKeyCode": 83}},
+  {"method": "Input.dispatchKeyEvent", "params": {"type": "keyUp", "key": "s", "code": "KeyS", "windowsVirtualKeyCode": 83}},
+  {"sleep": 200},
+  {"eval": "polish-s.js"},
+  {"screenshot": "polish-ask.png"},
+  {"eval": "polish-lang.js"},
+  {"eval": "polish-shot.js"},
+  {"screenshot": "polish-1440.png"},
+  {"method": "Emulation.setDeviceMetricsOverride", "params": {"width": 390, "height": 844, "deviceScaleFactor": 2, "mobile": true}},
+  {"method": "Emulation.setTouchEmulationEnabled", "params": {"enabled": true}},
+  {"sleep": 400},
+  {"eval": "polish-shot.js"},
+  {"screenshot": "polish-390.png"},
+  {"eval": "polish-ab.js"}
+]

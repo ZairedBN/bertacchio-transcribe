@@ -5,7 +5,7 @@
   $('file').files = dt.files; $('file').dispatchEvent(new Event('change'));
   for (let i = 0; i < 100 && !Looper.state.grid; i++) await wait(100);
   const S = Looper.state, H = Looper.wave.hooks, r = [];
-  window.prompt = (m, d) => d;
+  Looper.ask = (m, o) => Promise.resolve(o && o.value !== undefined ? o.value : true);
   H.setRegion(4.5, 8.5); $('saveSection').click();
   H.setRegion(12.5, 16.5); $('saveSection').click();
   H.clearRegion(); await wait(100);

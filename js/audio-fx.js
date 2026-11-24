@@ -402,6 +402,8 @@
   }
   /** orologio audio (secondi), null senza catena */
   const now = () => (graph ? ac.currentTime : null);
+  /** ritardo tra il brano e quello che esce dalle casse/cuffie (secondi; Bluetooth anche 0,2 s) */
+  const latency = () => (graph ? (ac.outputLatency || ac.baseLatency || 0) : 0);
   /** brano muto adesso, poi si apre esattamente all'istante `t` (orologio audio):
       serve per farlo partire in anticipo e senza farlo sentire */
   function muteUntil(t) {
@@ -456,7 +458,7 @@
   applyVolume(); applyEq(); applyShift(); updateIsoUi();
 
   L.fx = {
-    ensure, fadeIn, fadeOut, resetFade, playClicks, stopClicks, setBufferInfo, now, muteUntil,
+    ensure, fadeIn, fadeOut, resetFade, playClicks, stopClicks, setBufferInfo, now, latency, muteUntil,
     refreshTexts() { applyEq(); applyShift(); updateIsoUi(); },
     get active() { return !!graph; },
     // usati dai test con OfflineAudioContext

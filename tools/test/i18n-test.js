@@ -5,7 +5,7 @@
   const dt = new DataTransfer(); dt.items.add(file);
   $('file').files = dt.files; $('file').dispatchEvent(new Event('change'));
   for (let i = 0; i < 100 && !Looper.state.grid; i++) await wait(100);
-  window.prompt = (m, d) => d;
+  Looper.ask = (m, o) => Promise.resolve(o && o.value !== undefined ? o.value : true);
   const IT = /\b(della|brano|Sezione|velocità|passaggio|griglia|Ripetizioni|conteggio|Tasti|Apri|Mostra|Allenatore|Partenza|semitoni|spento|Ascolta|ogni|giri|Cancella|Imposta|Chiudi|battuta|Riproduzione|sinistro|destro|Trascina|Ricomincia|tocca|rilevato|Scegli)\b/;
   const scan = tag => {
     const bad = [];

@@ -107,6 +107,41 @@ window.Looper = window.Looper || {};
     return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
   };
 
+  // finestra dentro la pagina al posto di prompt()/confirm(), più comoda sul telefono.
+  // L.ask(testo, {value, ok, danger}) → con `value` chiede un testo (null se annullata),
+  // senza `value` chiede una conferma (true / null)
+  let askDone = null;
+  L.ask = (text, opts = {}) => {
+    const d = L.$('askDlg'), inp = L.$('askIn'), ok = L.$('askOk');
+    const withInput = opts.value !== undefined;
+    if (!d || !d.showModal) {     // browser senza <dialog>
+      return Promise.resolve(withInput ? prompt(text, opts.value) : (confirm(text) || null));
+    }
+    if (askDone) askDone(null);
+    L.$('askText').textContent = text;
+    inp.hidden = !withInput;
+    inp.value = withInput ? opts.value : '';
+    ok.textContent = opts.ok || 'OK';
+    ok.classList.toggle('danger', !!opts.danger);
+    L.$('askNo').textContent = L.t ? L.t('Annulla') : 'Annulla';
+    if (!d.open) d.showModal();
+    if (withInput) { inp.focus(); inp.select(); } else ok.focus();
+    return new Promise(res => { askDone = v => { askDone = null; res(v); }; });
+  };
+  document.addEventListener('DOMContentLoaded', () => {
+    const d = L.$('askDlg');
+    if (!d) return;
+    L.$('askForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const v = L.$('askIn').hidden ? true : L.$('askIn').value;
+      if (askDone) askDone(v);
+      d.close();
+    });
+    L.$('askNo').addEventListener('click', () => d.close());
+    d.addEventListener('close', () => { if (askDone) askDone(null); });
+    d.addEventListener('click', e => { if (e.target === d) d.close(); });   // clic fuori dalla finestra
+  });
+
   // pulsante che ripete l'azione se tenuto premuto
   L.holdRepeat = (el, fn) => {
     let t1 = null, t2 = null;

@@ -32,3 +32,4 @@ powershell -ExecutionPolicy Bypass -File tools\test\run.ps1 -Url https://zairedb
 | mixer | catena audio con OfflineAudioContext (`L.fx._test`): risposta piatta, bande spente, niente saturazione, Ascolta, assenza di scatti |
 | i18n | nessun testo italiano in EN/ES/DE/FR (in ES/FR "del" e "il" sono falsi positivi), larghezza a 390 px |
 | autolang | lingua scelta dal browser (navigator.languages = fr) |
+| polish | annulla/ripristina, aggiorna sezione, velocità della sezione, A/B e beat 1 a tempo, finestra per nomi e conferme (anche col tasto S vero), matita, rotella, testi nuovi nelle lingue, riga A/B sul telefono |

@@ -7,7 +7,7 @@
   await wait(500);
   // un passaggio e una sezione, per vedere la griglia e i chip
   const S = Looper.state, b = k => S.grid.offset + k * 60 / S.grid.bpm;
-  window.prompt = (m, d) => d;
+  Looper.ask = (m, o) => Promise.resolve(o && o.value !== undefined ? o.value : true);
   Looper.wave.hooks.setRegion(b(8), b(16));
   $('saveSection').click();
   return 'caricato, BPM ' + $('bpm').value + ', sw ' + !!navigator.serviceWorker.controller;

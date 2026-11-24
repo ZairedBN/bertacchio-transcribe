@@ -48,6 +48,8 @@ Se il browser non si apre da solo, vai all'indirizzo:  http://localhost:8765
   a inizio e fine (spostano di un beat alla volta).
   Sotto la forma d'onda c'e' la panoramica di tutto il brano:
   toccala per spostarti, trascina il riquadro per scorrere quando sei in zoom.
+  Con la rotella del mouse sulla forma d'onda fai lo zoom; Maiusc + rotella scorre.
+  Se sbagli una selezione, il pulsante  ↶  (o Ctrl+Z) la riporta com'era.
 
 - LOOP E VELOCITA'
   Premi Play: il passaggio si ripete da solo.
@@ -97,6 +99,9 @@ disattivarlo al volo).
   velocita') e come banda colorata in fondo alla forma d'onda. La ritrovi con un clic
   (o un tocco) sulla scheda o sulla banda, o con i tasti 1-9, anche nei giorni
   successivi. Il pulsante Loop prende il colore della sezione che stai ascoltando.
+  Se ritocchi i bordi di una sezione compare "Aggiorna": salva i nuovi bordi nella
+  sezione. La sezione ricorda anche l'ultima velocita' usata. Per rinominarla:
+  doppio clic sul nome, oppure la matita sulla sezione che stai ascoltando.
 - ALLENATORE DI VELOCITA' (nel riquadro "Velocita' e allenatore"): scegli partenza (es. 70%) e obiettivo (100%),
   il ritmo di aumento (Graduale, Normale, Veloce) e premi "Avvia allenamento":
   a ogni ripetizione la velocita' sale da sola. La barra mostra a che punto sei.
@@ -134,12 +139,15 @@ Passando il mouse su un pulsante compare a cosa serve e con quale tasto.
   Maiusc + frecce ... indietro / avanti di 2 secondi
   Home / Fine ....... inizio / fine del brano
   A / B ............. imposta inizio / fine del passaggio dove sei ora
+                      (con la griglia: sul beat piu' vicino)
   Canc .............. cancella la selezione
+  Ctrl+Z / Ctrl+Y ... annulla / ripristina l'ultima modifica del passaggio
   S ................. salva il passaggio come sezione
   1 - 9 ............. richiama una sezione salvata
   T ................. tap: batti a tempo per registrare i BPM
   G ................. mostra / nascondi la griglia
   Z ................. zoom sul passaggio / tutto il brano
+  rotella ........... zoom sulla forma d'onda   (Maiusc + rotella: scorre)
   PagGiu / freccia giu ... play / pausa   (pedali Bluetooth)
   PagSu  / freccia su .... ricomincia il passaggio
 

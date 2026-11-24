@@ -243,6 +243,9 @@
   .chip.on .txt small, .chip.on button.x { color: rgba(255, 255, 255, .85); }
   .chip.on button.x:hover { color: #fff; }
   .chips > .muted { padding: 4px 0; }
+  /* "Aggiorna sezione": compare quando si ritoccano i bordi della sezione in ascolto */
+  button.upd-sec { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-color: var(--upd-c, var(--accent)); color: var(--upd-c, var(--accent)); font-weight: 600; }
+  .chip button.ren { padding: 4px 8px; font-size: 14px; }
   .counter { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 14px; }
   .edge { display: inline-flex; align-items: center; gap: 4px; }
   .ab { display: inline-flex; gap: 8px; flex-wrap: wrap; }
@@ -305,6 +308,19 @@
   .keys-grid dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 12px; margin: 0; font-size: 14px; }
   .keys-grid dt { white-space: nowrap; }
   .keys-grid dd { margin: 0; color: var(--muted); }
+  /* finestra per nomi e conferme (al posto di quelle del browser) */
+  .ask-dlg {
+    width: min(420px, calc(100vw - 32px)); padding: 0;
+    border: 1px solid var(--border); border-radius: 14px;
+    background: var(--panel); color: var(--text); box-shadow: var(--shadow);
+  }
+  .ask-dlg::backdrop { background: rgba(10, 10, 14, .45); }
+  .ask-dlg form { padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 14px; }
+  .ask-dlg p { margin: 0; font-size: 15px; line-height: 1.4; overflow-wrap: anywhere; }
+  .ask-dlg input { font-size: 16px; width: 100%; box-sizing: border-box; }
+  .ask-btns { display: flex; justify-content: flex-end; gap: 8px; }
+  .ask-btns button { min-width: 96px; }
+  button.primary.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
   .tip {
     position: fixed; z-index: 100; max-width: 280px; pointer-events: none;
     background: var(--text); color: var(--bg); border-radius: 8px; padding: 7px 10px;
@@ -368,7 +384,8 @@
     .edge input[type=text] { flex: 1; min-width: 0; width: auto; }
     .arrow, #zoomLabel { display: none; }
     .ab { display: flex; gap: 8px; width: 100%; }
-    .ab button { flex: 1; padding-left: 6px; padding-right: 6px; }
+    .ab button { flex: 1; padding-left: 4px; padding-right: 4px; white-space: nowrap; min-width: 0; }
+    .ab #undoReg { flex: 0 0 52px; }
     .wave-bar button.small { padding: 4px 9px; }
     .file-ctl { position: relative; }
     .file-ctl .pop-wrap { position: static; }
@@ -560,6 +577,7 @@
           <button id="setA" disabled title="Tasto A">Imposta A</button>
           <button id="setB" disabled title="Tasto B">Imposta B</button>
           <button id="clearReg" disabled>Cancella</button>
+          <button class="icon" id="undoReg" disabled aria-label="Annulla l'ultima modifica del passaggio">↶</button>
           </span>
         </div>
         <div class="row">
@@ -580,13 +598,14 @@
         <div class="row">
           <span class="label">Sezioni</span>
           <button class="small" id="saveSection" disabled>＋ Salva sezione</button>
+          <button class="small upd-sec" id="updSection" hidden></button>
           <div class="chips" id="chips"></div>
         </div>
       </section>
 
       <p class="hint kbd-hint" data-i18n-html="kbdHint">
         Trascina sulla forma d'onda per selezionare il passaggio, trascina i bordi per regolarlo, clicca per spostarti. Le bande colorate in fondo alla forma d'onda e sotto la panoramica sono le sezioni: un clic le richiama.
-        <kbd>Ctrl</kbd>+rotella (o pizzico) per lo zoom, <kbd>Alt</kbd> mentre trascini per non agganciarti ai beat.<br>
+        Rotella (o pizzico) per lo zoom, <kbd>Maiusc</kbd>+rotella per scorrere, <kbd>Alt</kbd> mentre trascini per non agganciarti ai beat, <kbd>Ctrl</kbd>+<kbd>Z</kbd> per annullare una selezione sbagliata.<br>
         Tasti principali: <kbd>Spazio</kbd> ricomincia · <kbd>P</kbd> / <kbd>Invio</kbd> play/pausa · <kbd>T</kbd> tap tempo ·
         <kbd>←</kbd> <kbd>→</kbd> battuta o sezione prima/dopo · <kbd>A</kbd> / <kbd>B</kbd> inizio/fine ·
         <kbd>?</kbd> elenco completo dei tasti. Passa il mouse su un pulsante per vedere a cosa serve.
@@ -613,13 +632,17 @@
               <dt><kbd>Maiusc</kbd>+<kbd>←</kbd> <kbd>→</kbd></dt><dd>indietro / avanti di 2 secondi</dd>
               <dt><kbd>Home</kbd> <kbd>Fine</kbd></dt><dd>inizio / fine del brano</dd>
               <dt><kbd>Z</kbd></dt><dd>zoom sul passaggio / tutto il brano</dd>
+              <dt>Rotella</dt><dd>zoom sulla forma d'onda</dd>
+              <dt><kbd>Maiusc</kbd> + rotella</dt><dd>scorri la forma d'onda ingrandita</dd>
             </dl>
           </section>
           <section>
             <h3>Passaggio e sezioni</h3>
             <dl>
-              <dt><kbd>A</kbd> <kbd>B</kbd></dt><dd>inizio / fine del passaggio dove si trova la testina</dd>
+              <dt><kbd>A</kbd> <kbd>B</kbd></dt><dd>inizio / fine del passaggio dove si trova la testina (con la griglia: sul beat più vicino)</dd>
               <dt><kbd>Canc</kbd></dt><dd>cancella la selezione</dd>
+              <dt><kbd>Ctrl</kbd>+<kbd>Z</kbd></dt><dd>annulla l'ultima modifica del passaggio</dd>
+              <dt><kbd>Ctrl</kbd>+<kbd>Y</kbd></dt><dd>ripristina la modifica annullata</dd>
               <dt><kbd>S</kbd></dt><dd>salva il passaggio come sezione</dd>
               <dt><kbd>1</kbd>–<kbd>9</kbd></dt><dd>richiama una sezione salvata</dd>
             </dl>
@@ -630,10 +653,16 @@
               <dt><kbd>T</kbd></dt><dd>tap: batti a tempo (almeno 4 volte) per registrare i BPM</dd>
               <dt><kbd>G</kbd></dt><dd>mostra / nascondi la griglia dei beat</dd>
               <dt><kbd>Alt</kbd> + trascina</dt><dd>seleziona senza agganciarti ai beat</dd>
-              <dt><kbd>Ctrl</kbd> + rotella</dt><dd>zoom sulla forma d'onda</dd>
             </dl>
           </section>
         </div>
+      </dialog>
+      <dialog class="ask-dlg" id="askDlg">
+        <form id="askForm">
+          <p id="askText"></p>
+          <input type="text" id="askIn" maxlength="60" autocomplete="off" enterkeyhint="done">
+          <div class="ask-btns"><button type="button" id="askNo">Annulla</button><button class="primary" id="askOk">OK</button></div>
+        </form>
       </dialog>
       <p class="hint touch-hint">Sul telefono: un dito per selezionare, due dita per lo zoom. Tocca la barra sotto la forma d'onda per spostarti nel brano, tocca le bande colorate in fondo alla forma d'onda per richiamare le sezioni. Tieni premuto un pulsante per sapere a cosa serve.</p>
     </div>

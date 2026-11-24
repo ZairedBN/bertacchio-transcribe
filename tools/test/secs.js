@@ -2,7 +2,7 @@
   const $ = id => document.getElementById(id), wait = ms => new Promise(r => setTimeout(r, ms));
   const S = Looper.state, b = k => S.grid.offset + k * 60 / S.grid.bpm;
   let names = ['Intro', 'Assolo di chitarra lungo'];
-  window.prompt = (m, d) => names.shift() || d;
+  Looper.ask = (m, o) => Promise.resolve(names.shift() || o.value);
   Looper.wave.hooks.setRegion(b(0), b(6)); $('saveSection').click();
   Looper.wave.hooks.setRegion(b(40), b(52)); $('saveSection').click();
   Looper.wave.setView(0, S.duration);

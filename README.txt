@@ -40,6 +40,8 @@ If the browser does not open by itself, go to:  http://localhost:8765
 - CHOOSING THE PASSAGE: drag on the waveform; the highlighted area is the loop.
   Drag its edges to adjust it, or use the - and + buttons next to start and end
   (one beat at a time). The overview under the waveform shows the whole track.
+  The mouse wheel on the waveform zooms; Shift + wheel scrolls.
+  If you get a selection wrong, the  ↶  button (or Ctrl+Z) brings it back.
 - LOOP AND SPEED: press Play and the passage repeats by itself. Play starts where
   you clicked on the waveform; Stop goes back to the start of the passage.
   "Keep pitch" stops the track from getting lower when you slow it down.
@@ -67,6 +69,9 @@ If the BPM is wrong, press "Tap" along with the music (at least 4 times), use
 - SECTIONS: select a passage and press "+ Save section". Each section has its own
   color, shown as a card and as a band at the bottom of the waveform: click (or
   tap) it, or press 1-9, to recall it. The Loop button takes the section color.
+  If you adjust the edges of a section, "Update" appears: it saves the new edges
+  in the section. A section also remembers the last speed you used. To rename it:
+  double-click its name, or use the pencil on the section you are playing.
 - SPEED TRAINER: choose start (e.g. 70%) and target (100%), the increase rate and
   press "Start training": the speed goes up by itself with every repeat.
 - PITCH: transpose by semitones (e.g. for a capo) and fine tuning.
@@ -94,12 +99,15 @@ Press  ?  (or the "Keys" button at the top) for the full list in the app.
   Shift + arrows .... back / forward 2 seconds
   Home / End ........ start / end of the track
   A / B ............. set passage start / end at the playhead
+                      (with the grid: on the nearest beat)
   Del ............... clear the selection
+  Ctrl+Z / Ctrl+Y ... undo / redo the last change to the passage
   S ................. save the passage as a section
   1 - 9 ............. recall a saved section
   T ................. tap tempo
   G ................. show / hide the grid
   Z ................. zoom to the passage / whole track
+  wheel ............. zoom the waveform   (Shift + wheel: scroll)
   PgDn / down ....... play / pause   (Bluetooth pedals)
   PgUp / up ......... restart the passage
 

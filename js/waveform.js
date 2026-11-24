@@ -21,7 +21,7 @@
   const stat = document.createElement('canvas'), sctx = stat.getContext('2d');    // forma d'onda statica
   const ovStat = document.createElement('canvas'), osctx = ovStat.getContext('2d');
 
-  const hooks = { seek() {}, setRegion() {}, clearRegion() {}, dragEnd() {} };
+  const hooks = { seek() {}, setRegion() {}, clearRegion() {}, beginEdit() {}, dragEnd() {} };
   let dirty = true, ovDirty = true, needsDraw = true;
   let lastUserView = 0;
 
@@ -388,6 +388,7 @@
     if (!drag.moved && Math.abs(e.clientX - drag.startX) > (drag.touch ? 8 : 3)) {
       drag.moved = true;
       if (drag.mode === 'section') drag.mode = 'new';   // trascinando dal marcatore si fa una selezione normale
+      hooks.beginEdit();                                // per poter annullare (Ctrl+Z)
       if (!autoRaf) autoRaf = requestAnimationFrame(autoScroll);
     }
     if (drag.moved) applyDrag(e.clientX, e);
@@ -414,14 +415,22 @@
 
   canvas.addEventListener('wheel', e => {
     if (!S.duration) return;
+    // rotella = zoom dove si trova il puntatore; Maiusc+rotella o rotella orizzontale = scorrere
+    const unit = e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? 400 : 1;   // righe / pagine → pixel
+    const dx = e.deltaX * unit, dy = e.deltaY * unit;
     if (e.ctrlKey) {                       // anche il pizzico sul trackpad del Mac
       e.preventDefault();
-      zoomBy(Math.exp(-e.deltaY * 0.01), xToTime(e.clientX));
-    } else if (isZoomed()) {
+      zoomBy(Math.exp(-dy * 0.01), xToTime(e.clientX));
+    } else if (e.shiftKey || Math.abs(dx) > Math.abs(dy)) {
+      if (!isZoomed()) return;
       e.preventDefault();
-      const dd = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      const dd = Math.abs(dx) > Math.abs(dy) ? dx : dy;
       setView(S.view.start + dd / canvas.getBoundingClientRect().width * span(), span());
       lastUserView = performance.now();
+    } else if (dy) {
+      if (!isZoomed() && dy > 0) return;   // già tutto il brano: la rotella in giù fa scorrere la pagina
+      e.preventDefault();
+      zoomBy(Math.exp(-clamp(dy, -150, 150) * 0.0025), xToTime(e.clientX));
     }
   }, { passive: false });
 

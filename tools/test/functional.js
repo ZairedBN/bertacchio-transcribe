@@ -3,7 +3,7 @@
   const wait = ms => new Promise(r => setTimeout(r, ms));
   const until = async (fn, ms = 8000) => { const t0 = performance.now(); while (performance.now() - t0 < ms) { if (fn()) return true; await wait(50); } return false; };
   const errors = []; window.addEventListener('error', e => errors.push(e.message));
-  window.prompt = (m, d) => d; window.confirm = () => true;
+  Looper.ask = (m, o) => Promise.resolve(o && o.value !== undefined ? o.value : true);
   const S = Looper.state, audio = $('audio');
   const press = el => { el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0 })); el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true })); };
   try {
@@ -69,7 +69,7 @@
     $('trStop').click();
 
     // sezioni
-    $('saveSection').click();
+    $('saveSection').click(); await wait(50);
     log('sezioni', [...document.querySelectorAll('.chip .name')].map(x => x.textContent).join('|'));
 
     // tap tempo (a brano fermo): 4 tocchi a 100 BPM
