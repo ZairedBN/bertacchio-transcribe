@@ -1,7 +1,7 @@
 # DEV_NOTES — Bertacchio Transcribe
 
 Cose aperte: verifiche, limiti, pulizia. Le idee per il futuro sono in **`IDEE.md`**.
-Ultimo controllo: 26/11/2026, versione locale (SW `looper-v2-11`, non ancora pubblicata).
+Ultimo controllo: 26/11/2026, versione online (SW `looper-v2-11`).
 
 ---
 
@@ -14,6 +14,7 @@ Si tengono solo le ultime 1–2 versioni; il resto è nella cronologia git.
 - **Avviso "Forse è 160?"** accanto al BPM quando l'app è indecisa tra doppio e metà: un tocco usa quel tempo. Sparisce anche cambiando il BPM a mano, con Tap, ÷2 o ×2. Resta salvato con il brano. La nota accanto al BPM ora va a capo invece di essere tagliata con "…".
 - I brani già aperti con le versioni precedenti vengono rianalizzati una volta (non quelli con il tempo corretto a mano; la scelta mostra/nascondi griglia resta).
 - Nuova suite di test `bpmoct`: 49 brani sintetici (5 ritmi, 60–286 BPM) → 45 giusti, 4 sbagliati ma con l'avviso giusto, 0 errori senza avviso.
+- **Zip Windows** rifatto: va passato a chi usa la versione Windows.
 
 **v2-10 (24/11/2026)** — rifiniture contro le piccole frustrazioni
 - **Annulla / ripristina il passaggio**: Ctrl+Z / Ctrl+Y e pulsante ↶ accanto a "Cancella". Vale per trascinamenti, A/B, −/+ (tenere premuto conta come un passo solo), Canc, campi inizio/fine e richiamo delle sezioni.
