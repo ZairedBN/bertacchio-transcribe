@@ -1,12 +1,19 @@
 # DEV_NOTES — Bertacchio Transcribe
 
 Cose aperte: verifiche, limiti, pulizia. Le idee per il futuro sono in **`IDEE.md`**.
-Ultimo controllo: 24/11/2026, versione online (SW `looper-v2-10`).
+Ultimo controllo: 26/11/2026, versione locale (SW `looper-v2-11`, non ancora pubblicata).
 
 ---
 
 ## Ultime modifiche
 Si tengono solo le ultime 1–2 versioni; il resto è nella cronologia git.
+
+**v2-11 (26/11/2026)** — BPM giusto sui brani veloci, avviso "Forse è …?"
+- **Tempi fino a 300 BPM**: prima il rilevamento si fermava a 200 ("Giant Steps" non poteva uscire giusto).
+- **Scelta tra doppio e metà più affidabile**: conta quanto i colpi cadono sui beat rispetto a metà tra un beat e l'altro; l'hi-hat in ottavi non trascina più verso la metà. Corretto anche un falso picco sui brani lenti con pochi colpi (60 → 150).
+- **Avviso "Forse è 160?"** accanto al BPM quando l'app è indecisa tra doppio e metà: un tocco usa quel tempo. Sparisce anche cambiando il BPM a mano, con Tap, ÷2 o ×2. Resta salvato con il brano.
+- I brani già aperti con le versioni precedenti vengono rianalizzati una volta (non quelli con il tempo corretto a mano; la scelta mostra/nascondi griglia resta).
+- Nuova suite di test `bpmoct`: 49 brani sintetici (5 ritmi, 60–286 BPM) → 45 giusti, 4 sbagliati ma con l'avviso giusto, 0 errori senza avviso.
 
 **v2-10 (24/11/2026)** — rifiniture contro le piccole frustrazioni
 - **Annulla / ripristina il passaggio**: Ctrl+Z / Ctrl+Y e pulsante ↶ accanto a "Cancella". Vale per trascinamenti, A/B, −/+ (tenere premuto conta come un passo solo), Canc, campi inizio/fine e richiamo delle sezioni.
@@ -22,16 +29,6 @@ Si tengono solo le ultime 1–2 versioni; il resto è nella cronologia git.
 - Con la finestra "Tasti" aperta i tasti non comandano più il brano (prima Spazio lo faceva ripartire).
 - Testi tradotti che restavano in italiano: "Impossibile leggere la forma d'onda…", "Caricamento…" nei Recenti.
 - Nuovo test `polish`.
-- **Zip Windows** rifatto: va passato a chi usa la versione Windows.
-
-**v2-9 (23/11/2026)**
-- **Conteggio a tempo**: il brano parte in anticipo e muto e si apre esattamente sul beat 1, seguendo l'orologio dei click.
-  - Test `countsync`: 0–7 ms a 1× (prima da −18 a +15 ms).
-  - Durante l'anticipo la testina resta ferma sul punto di partenza.
-  - Un clic sulla forma d'onda durante il conteggio sposta il punto da cui si riparte.
-- **Errori di "Carica link" tradotti** nella lingua scelta, con frasi chiare per i casi frequenti di yt-dlp: sito non supportato, video privato, accesso richiesto, yt-dlp da aggiornare, pagina inesistente, rete.
-- **Finestra del server Windows** in italiano o inglese, secondo la lingua di Windows.
-- Nuovi test: `countsync` (precisione del conteggio) e `linkerr` (errori tradotti).
 - **Zip Windows** rifatto: va passato a chi usa la versione Windows.
 
 ## 1. Da verificare con l'utente (prove reali)
@@ -51,15 +48,16 @@ Si tengono solo le ultime 1–2 versioni; il resto è nella cronologia git.
   - A/B premuti durante l'ascolto: cadono sul beat giusto o su quello dopo? (compensazione di 50 ms + ritardo d'uscita, da provare anche con cuffie Bluetooth);
   - rotella = zoom: con il **trackpad del Mac** lo scorrimento verticale a due dita ora fa zoom sull'onda. Se dà fastidio, tornare a Ctrl+rotella solo per il trackpad;
   - finestra dei nomi sul telefono vero (tastiera che si apre, pulsanti comodi).
+- [ ] **Avviso "Forse è …?" (v2-11) su brani veri**: compare quando serve e non dà fastidio quando non serve? Il valore proposto per "Giant Steps" (291,7) e per i brani trap ("VIBEZ" 154 o 77) è quello che conteresti tu?
 - [ ] **Traduzioni ES/DE/FR**: scritte da Claude, da far rileggere a un madrelingua. La terminologia musicale è la parte più delicata ("pasaje", "Einzähler", "décompte"…).
 
 ## 2. Limiti noti da migliorare
-- [ ] **BPM al doppio o alla metà** sui tempi veloci. — *prossimo lavoro, insieme ai cambi di tempo*
-  - Sintetici: 160 → 80, 174 → 87.
-  - "Giant Steps" (~286) → 72.
-  - "ACT!VE" dà 107,33 BPM (non intero): da sentire.
-  - Idea: preferire l'ottava più vicina a 90–140 solo se la salienza è simile, oppure proporre "÷2 / ×2" con un suggerimento visibile.
-- [ ] **Brani con cambi di tempo** (es. "SICKO MODE") — *prossimo lavoro*: la griglia è unica per tutto il brano. Servirebbe una mappa del tempo a tratti (`steady` per blocchi esiste già in `js/bpm.js`).
+- [ ] **BPM doppio/metà, casi rimasti** (dopo v2-11; i pulsanti ÷2 / ×2 sono nel menu "Griglia ▾"):
+  - brani veri in `cache/`: "Giant Steps" → 145,86 con "Forse è 291,7?"; "VIBEZ" → 154 (prima 77) con "Forse è 77?"; "ACT!VE" → 107,36 con "Forse è 53,7?" (107,36 non intero: da sentire);
+  - "Pulse" (Vincent David) è passato da 121 a 75,35: tempo non regolare, griglia nascosta, ma il BPM mostrato è cambiato. Da sentire quale è giusto;
+  - un "half-time" a 100 BPM (sensazione di 50) dà un valore sbagliato senza avviso: caso raro, escluso dal test;
+  - i brani in 6/8 o con terzine non sono provati.
+- [ ] **Brani con cambi di tempo** (es. "SICKO MODE") — *prossimo lavoro sulla griglia*: la griglia è unica per tutto il brano. Servirebbe una mappa del tempo a tratti (`steady` per blocchi esiste già in `js/bpm.js`).
 - [ ] **Beat 1** riconosciuto dalla cassa: verificato solo su brani sintetici.
 - [ ] **Memoria su telefoni economici**: il brano viene decodificato tutto (~100 MB per 5 min), più le copie per l'analisi del tempo. Possibile ottimizzazione: analizzare un mono a 11 kHz e liberare le copie.
 - [ ] **Spazio dei Recenti**: fino a 40 brani interi in IndexedDB. Su Windows i brani scaricati restano anche in `cache/` (doppio spazio). Manca un indicatore dello spazio occupato.

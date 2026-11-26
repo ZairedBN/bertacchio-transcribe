@@ -8,7 +8,8 @@
   let loopCount = 0, waiting = false, waitTimer = null, fadingOut = false, tempoToken = 0;
   let editSec = null;    // sezione richiamata per ultima: se se ne ritoccano i bordi, si può aggiornarla
   let userPos = false;   // la testina è stata spostata a mano: Play parte da lì anche fuori dal passaggio
-  let gridMeta = { steady: null, show: true };   // per brano: quanto è regolare il tempo e se la griglia è visibile
+  // per brano: quanto è regolare il tempo, se la griglia è visibile, BPM alternativo da proporre (doppio/metà)
+  let gridMeta = { steady: null, show: true, alt: null };
 
   // ======================================================================
   // Caricamento brano
@@ -33,7 +34,7 @@
     editSec = null;
     applySpeed(store.get('speed:' + songKey, 1));    // ogni brano riparte dalla sua ultima velocità (nuovo: 100%)
     applyPitchPreserve();
-    gridMeta = { steady: null, show: true };
+    gridMeta = { steady: null, show: true, alt: null };
     $('gridShow').checked = S.gridShow = true;
     setNote('');
     L.wave.setBuffer(null);
@@ -240,11 +241,14 @@
     const token = ++tempoToken;
     updateTempoUi();
     const saved = store.get('tempo:' + songKey, null);
-    // i tempi rilevati dalla v2.0 non sapevano se il brano è a tempo fisso: si rianalizzano
-    if (saved && saved.bpm && (saved.steady != null || !saved.detected)) {
+    // i tempi rilevati prima della v2-11 non sapevano proporre il doppio/la metà (né, dalla v2.0, se il
+    // brano è a tempo fisso): si rianalizzano una volta. Quelli corretti a mano (detected: false) restano.
+    if (saved && saved.bpm && (!saved.detected || (saved.steady != null && 'alt' in saved))) {
       gridMeta.steady = saved.steady != null ? saved.steady : null;
       applyGridShow(saved.show != null ? saved.show : store.get('gridShow', true));
       setGrid(saved, false);
+      gridMeta.alt = saved.alt || null;
+      updateAlt();
       setNote(!S.gridShow ? 'griglia nascosta (attivala da Griglia ▾)' : saved.detected ? '(rilevato)' : '');
       return;
     }
@@ -258,17 +262,34 @@
     }
     const regular = r.steady >= STEADY_MIN && r.confidence >= 2;
     gridMeta.steady = Math.round(r.steady * 100) / 100;
-    applyGridShow(regular);
-    setGrid({ bpm: r.bpm, offset: r.offset, beatsPerBar: 4, detected: true }, true);
-    setNote(!regular ? 'tempo non regolare: griglia nascosta (attivala da Griglia ▾)'
+    applyGridShow(saved && saved.show != null ? saved.show : regular);   // rianalisi: la scelta mostra/nascondi resta
+    setGrid({ bpm: r.bpm, offset: r.offset, beatsPerBar: 4, detected: true }, false);
+    gridMeta.alt = r.alt >= 20 && r.alt <= 300 ? r.alt : null;
+    saveTempo(true);
+    updateAlt();
+    setNote(!S.gridShow ? (regular ? 'griglia nascosta (attivala da Griglia ▾)' : 'tempo non regolare: griglia nascosta (attivala da Griglia ▾)')
       : r.confidence < 3 ? '(rilevato, da verificare)' : '(rilevato)');
   }
 
   function saveTempo(detected) {
-    if (songKey && S.grid) store.set('tempo:' + songKey, { ...S.grid, detected: !!detected, steady: gridMeta.steady, show: gridMeta.show });
+    if (songKey && S.grid) store.set('tempo:' + songKey, { ...S.grid, detected: !!detected, steady: gridMeta.steady, show: gridMeta.show, alt: gridMeta.alt });
   }
 
+  /** "Forse è 160?": l'app non era sicura tra doppio e metà; un tocco usa l'altro valore */
+  function updateAlt() {
+    const b = $('bpmAlt'), alt = S.grid && gridMeta.alt;
+    b.hidden = !alt;
+    if (alt) b.textContent = L.t('Forse è {bpm}?', { bpm: Math.round(alt * 10) / 10 });
+  }
+  $('bpmAlt').addEventListener('click', () => {
+    if (!S.grid || !gridMeta.alt) return;
+    setGrid({ ...S.grid, bpm: gridMeta.alt, detected: true });
+    setNote('');
+  });
+
   function setGrid(g, save = true) {
+    // il BPM cambia (a mano, Tap, ÷2, ×2 o dall'avviso): l'avviso non serve più
+    if (gridMeta.alt && S.grid && g && Math.abs(g.bpm - S.grid.bpm) > 0.01) { gridMeta.alt = null; updateAlt(); }
     if (g && g.bpm > 0) {
       const bpb = g.beatsPerBar || 4, bar = 60 / g.bpm * bpb;
       let off = g.offset % bar; if (off < 0) off += bar;
@@ -288,6 +309,7 @@
     for (const id of ['bpm', 'bpm2']) if (document.activeElement !== $(id)) $(id).value = g ? g.bpm : '';
     $('meter').value = String(g ? g.beatsPerBar : 4);
     $('beatOne').disabled = $('bpmX2').disabled = $('bpmHalf').disabled = !g;
+    updateAlt();
     updateCountUi();
   }
 
@@ -997,6 +1019,7 @@
     if (!songKey) $('filename').textContent = L.t('Nessun brano caricato');
     if (!$('placeholder').hidden && !songKey) $('placeholder').textContent = L.t('Trascina qui un file audio oppure usa “Apri file…”');
     setNote(noteRaw);
+    updateAlt();
     updatePlayLabel();
     updateCountUi();
     updateCounter();

@@ -113,6 +113,8 @@
       'Fonctionne avec les morceaux à tempo constant. Si le tempo n\'est pas régulier (jazz, rubato, live), la grille est masquée au départ.'],
     ['griglia nascosta (attivala da Griglia ▾)', 'grid hidden (turn it on from Grid ▾)', 'cuadrícula oculta (actívala en Cuadrícula ▾)', 'Raster ausgeblendet (über Raster ▾ einschalten)', 'grille masquée (activez-la dans Grille ▾)'],
     ['(rilevato)', '(detected)', '(detectado)', '(erkannt)', '(détecté)'],
+    ['Forse è {bpm}?', 'Maybe {bpm}?', '¿Quizá {bpm}?', 'Vielleicht {bpm}?', 'Peut-être {bpm} ?'],
+    ['Non sono sicuro tra doppio e metà: tocca per usare questo tempo', 'Not sure between double and half: tap to use this tempo', 'Dudo entre el doble y la mitad: toca para usar este tempo', 'Unsicher zwischen doppeltem und halbem Tempo: tippen, um dieses Tempo zu verwenden', 'Hésitation entre le double et la moitié : touchez pour utiliser ce tempo'],
     ['(rilevato, da verificare)', '(detected, please check)', '(detectado, por verificar)', '(erkannt, bitte prüfen)', '(détecté, à vérifier)'],
     ['analisi in corso…', 'analyzing…', 'analizando…', 'wird analysiert…', 'analyse en cours…'],
     ['non rilevato: usa Tap', 'not detected: use Tap', 'no detectado: usa Tap', 'nicht erkannt: Tap verwenden', 'non détecté : utilisez Tap'],

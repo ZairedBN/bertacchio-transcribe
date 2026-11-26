@@ -23,6 +23,7 @@
     gridBtn: ['Griglia dei beat: mostra/nascondi, aggancio, ÷2 ×2, beat 1', ['G mostra/nasconde']],
     bpmHalf: ['Dimezza i BPM (griglia al doppio del tempo giusto)'],
     bpmX2: ['Raddoppia i BPM (griglia alla metà del tempo giusto)'],
+    bpmAlt: ['Non sono sicuro tra doppio e metà: tocca per usare questo tempo'],
     beatOne: ['La battuta inizia dove si trova ora la testina'],
     play: ['Play / pausa', ['P', 'Invio', '↓']],
     restartBtn: ['Ricomincia dall\'inizio del passaggio (o del brano)', ['Spazio', '↑']],

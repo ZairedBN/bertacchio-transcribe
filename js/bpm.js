@@ -7,6 +7,7 @@
   function analyzeTempo(x, sr) {
     const hop = Math.max(32, Math.round(sr / 172));        // ~5.8 ms
     const hopSec = hop / sr;
+    const ALT_RATIO = 0.8;   // il doppio/la metà ha almeno l'80% del punteggio (senza la preferenza per 120): si propone
     const N = Math.floor(x.length / hop);
     if (N < 400) return null;
 
@@ -60,15 +61,23 @@
     const O = new Float32Array(N);
     for (let n = 0; n < N; n++) O[n] = fa[n] + 0.3 * low[n];   // i bassi pesano poco: altrimenti la cassa sui beat 1 e 3 fa scegliere metà tempo
 
-    // 3) autocorrelazione tra 60 e 190 BPM, con preferenza morbida intorno a 120
+    // 3) autocorrelazione tra 50 e 200 BPM, con preferenza morbida intorno a 120
+    //    (i tempi più veloci, fino a 300, arrivano dalla scelta dell'ottava più sotto)
     const lagOf = bpm => 60 / bpm / hopSec;
-    const lagMin = Math.floor(lagOf(190)), lagMax = Math.ceil(lagOf(60));
+    const lagMin = Math.floor(lagOf(200)), lagMax = Math.ceil(lagOf(50));
     const maxLag = Math.min(N - 1, lagMax * 2 + 2);
+    // sul segnale senza la sua media: altrimenti nei brani con pochi colpi il fondo piatto,
+    // moltiplicato per la preferenza intorno a 120, vince su un picco vero lontano da 120
+    let mO = 0;
+    for (let n = 0; n < N; n++) mO += O[n];
+    mO /= N;
+    const Oc = new Float32Array(N);
+    for (let n = 0; n < N; n++) Oc[n] = O[n] - mO;
     const r = new Float32Array(maxLag + 1);
     for (let L = lagMin; L <= maxLag; L++) {
       let s = 0;
-      for (let n = 0, m = N - L; n < m; n++) s += O[n] * O[n + L];
-      r[L] = s / (N - L);
+      for (let n = 0, m = N - L; n < m; n++) s += Oc[n] * Oc[n + L];
+      r[L] = Math.max(0, s / (N - L));
     }
     const score = new Float32Array(lagMax + 2);
     let best = -1, bestL = lagMin;
@@ -78,13 +87,16 @@
       score[L] = (r[L] + 0.5 * (2 * L <= maxLag ? r[2 * L] : 0)) * prior;
       if (score[L] > best) { best = score[L]; bestL = L; }
     }
-    let Lf = bestL;
-    if (bestL > lagMin && bestL < lagMax) {
-      const y0 = score[bestL - 1], y1 = score[bestL], y2 = score[bestL + 1];
-      const den = y0 - 2 * y1 + y2;
-      if (den < 0) Lf = bestL + 0.5 * (y0 - y2) / den;
-    }
-    const bpm0 = 60 / (Lf * hopSec);
+    const peakBpm = L0 => {
+      let Lf = L0;
+      if (L0 > lagMin && L0 < lagMax) {
+        const y0 = score[L0 - 1], y1 = score[L0], y2 = score[L0 + 1];
+        const den = y0 - 2 * y1 + y2;
+        if (den < 0) Lf = L0 + 0.5 * (y0 - y2) / den;
+      }
+      return 60 / (Lf * hopSec);
+    };
+    let bpm0 = peakBpm(bestL);
 
     // 4) affinamento: allinea un pettine di beat su tutto il brano
     const comb = (bpm) => {
@@ -102,23 +114,44 @@
       }
       return { bpm, score: bestS, phase: bestPh, mean: sumS / (cnt || 1) };
     };
-    // scelta dell'ottava (metà / stesso / doppio): vince il tempo con più differenza tra
-    // attacchi sui beat e attacchi a metà tra un beat e l'altro (a metà tempo lì cade il rullante)
-    const at = i => O[i] + 0.5 * ((i > 0 ? O[i - 1] : 0) + O[i + 1]);
-    const contrast = bpm => {
-      const c = comb(bpm), Pc = lagOf(bpm);
-      let off = 0, k = 0;
-      for (let t = c.phase + Pc / 2; t < N - 2; t += Pc, k++) off += at(Math.round(t));
-      off /= (k || 1);
-      const prior = Math.exp(-0.5 * Math.pow(Math.log2(bpm / 120) / 0.8, 2));
-      return (c.score - off) * prior;
-    };
-    let center = bpm0, bestC = -Infinity;
-    for (const cand of [bpm0 / 2, bpm0, bpm0 * 2]) {
-      if (cand < 55 || cand > 200) continue;
-      const v = contrast(cand);
-      if (v > bestC) { bestC = v; center = cand; }
+    // nei brani con pochi colpi il picco più alto può essere un tempo "storto" (es. 150 per un 60):
+    // tra i picchi quasi altrettanto alti si tiene quello che cade meglio sui colpi
+    {
+      const salience = bpm => { const c = comb(bpm); return c.mean > 0 ? c.score / c.mean : 0; };
+      let bestSal = salience(bpm0);
+      for (let L = lagMin + 1; L < lagMax; L++) {
+        if (L === bestL || !(score[L] >= score[L - 1] && score[L] > score[L + 1] && score[L] >= 0.6 * best)) continue;
+        const b = peakBpm(L), ratio = b > bpm0 ? b / bpm0 : bpm0 / b;
+        if ([1, 1.5, 2, 3].some(q => Math.abs(ratio / q - 1) < 0.04)) continue;   // stesso tempo o parente stretto
+        const s = salience(b);
+        if (s > bestSal * 1.15) { bestSal = s; bpm0 = b; }
+      }
     }
+    const at = i => O[i] + 0.5 * ((i > 0 ? O[i - 1] : 0) + O[i + 1]);
+    // scelta dell'ottava (metà / stesso / doppio): al tempo giusto gli attacchi cadono sui beat e non
+    // a metà tra un beat e l'altro (a metà tempo lì cadrebbe il rullante; al doppio metà dei beat restano vuoti)
+    const contrast = bpm => {
+      const Pc = lagOf(bpm);
+      let raw = 0;
+      for (let ph = 0; ph < Pc; ph += 1) {
+        let on = 0, off = 0, k = 0;
+        for (let t = ph; t + Pc / 2 < N - 2; t += Pc, k++) { on += at(Math.round(t)); off += at(Math.round(t + Pc / 2)); }
+        // differenza × quanto è netta (a metà tempo la cassa sui beat batte il rullante a metà, ma di poco)
+        const d = on - off;
+        if (k && d > 0) raw = Math.max(raw, d * d / ((on + off) * k));
+      }
+      const prior = Math.exp(-0.5 * Math.pow(Math.log2(bpm / 120) / 1.0, 2));
+      return { raw, v: raw * prior };
+    };
+    const cands = [];
+    // solo metà / stesso / doppio: un terzo del tempo vincerebbe sempre (a metà tra i suoi beat non c'è nulla)
+    for (const cand of [bpm0 / 2, bpm0, bpm0 * 2]) if (cand >= 50 && cand <= 300) cands.push({ bpm: cand, ...contrast(cand) });
+    cands.sort((p, q) => q.v - p.v);
+    const center = cands[0].bpm;
+    // il doppio o la metà è quasi altrettanto probabile? allora l'app lo dice ("Forse è …?")
+    // (tra doppio e metà si propone quello che i colpi confermano di più, senza la preferenza per 120)
+    const oct = cands.filter(c => c.bpm !== center).sort((p, q) => q.raw - p.raw)[0];
+    const rival = oct && cands[0].raw > 0 && oct.raw >= ALT_RATIO * cands[0].raw ? (oct.bpm > center ? 2 : 0.5) : 0;
     let top = comb(center);
     for (let bb = center * 0.97; bb <= center * 1.03; bb += 0.05) {
       const c = comb(bb);
@@ -183,6 +216,7 @@
       offset,
       confidence: top.mean > 0 ? top.score / top.mean : 0,
       steady,
+      alt: rival ? Math.round(top.bpm * rival * 100) / 100 : null,
     };
   }`;
 

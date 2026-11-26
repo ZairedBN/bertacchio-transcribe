@@ -1,0 +1,15 @@
+[
+  {"method": "Emulation.setDeviceMetricsOverride", "params": {"width": 1440, "height": 900, "deviceScaleFactor": 1, "mobile": false}},
+  {"method": "Page.reload", "params": {"ignoreCache": true}},
+  {"sleep": 2500},
+  {"eval": "bpmoct.js"},
+  {"eval": "synth.js"},
+  {"eval": "bpmalt.js"},
+  {"eval": "bpmalt-shot.js"},
+  {"screenshot": "bpmalt-1440.png"},
+  {"method": "Emulation.setDeviceMetricsOverride", "params": {"width": 390, "height": 844, "deviceScaleFactor": 2, "mobile": true}},
+  {"method": "Emulation.setTouchEmulationEnabled", "params": {"enabled": true}},
+  {"sleep": 400},
+  {"eval": "bpmalt-shot.js"},
+  {"screenshot": "bpmalt-390.png"}
+]
