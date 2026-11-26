@@ -8,6 +8,7 @@
     const hop = Math.max(32, Math.round(sr / 172));        // ~5.8 ms
     const hopSec = hop / sr;
     const ALT_RATIO = 0.8;   // il doppio/la metà ha almeno l'80% del punteggio (senza la preferenza per 120): si propone
+    const ALT_EXTREME = 1.1; // per un tempo sopra 200 o sotto 60 serve il 110%
     const N = Math.floor(x.length / hop);
     if (N < 400) return null;
 
@@ -151,7 +152,10 @@
     // il doppio o la metà è quasi altrettanto probabile? allora l'app lo dice ("Forse è …?")
     // (tra doppio e metà si propone quello che i colpi confermano di più, senza la preferenza per 120)
     const oct = cands.filter(c => c.bpm !== center).sort((p, q) => q.raw - p.raw)[0];
-    const rival = oct && cands[0].raw > 0 && oct.raw >= ALT_RATIO * cands[0].raw ? (oct.bpm > center ? 2 : 0.5) : 0;
+    // tempi estremi (sopra 200, sotto 60) solo se i colpi li confermano chiaramente: un hi-hat in sedicesimi
+    // farebbe proporre il doppio a ogni brano disco/funk
+    const need = oct && (oct.bpm > 200 || oct.bpm < 59.5) ? ALT_EXTREME : ALT_RATIO;
+    const rival = oct && cands[0].raw > 0 && oct.raw >= need * cands[0].raw ? (oct.bpm > center ? 2 : 0.5) : 0;
     let top = comb(center);
     for (let bb = center * 0.97; bb <= center * 1.03; bb += 0.05) {
       const c = comb(bb);

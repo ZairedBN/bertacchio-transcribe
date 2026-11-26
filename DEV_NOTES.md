@@ -11,7 +11,7 @@ Si tengono solo le ultime 1–2 versioni; il resto è nella cronologia git.
 **v2-11 (26/11/2026)** — BPM giusto sui brani veloci, avviso "Forse è …?"
 - **Tempi fino a 300 BPM**: prima il rilevamento si fermava a 200 ("Giant Steps" non poteva uscire giusto).
 - **Scelta tra doppio e metà più affidabile**: conta quanto i colpi cadono sui beat rispetto a metà tra un beat e l'altro; l'hi-hat in ottavi non trascina più verso la metà. Corretto anche un falso picco sui brani lenti con pochi colpi (60 → 150).
-- **Avviso "Forse è 160?"** accanto al BPM quando l'app è indecisa tra doppio e metà: un tocco usa quel tempo. Sparisce anche cambiando il BPM a mano, con Tap, ÷2 o ×2. Resta salvato con il brano.
+- **Avviso "Forse è 160?"** accanto al BPM quando l'app è indecisa tra doppio e metà: un tocco usa quel tempo. Sparisce anche cambiando il BPM a mano, con Tap, ÷2 o ×2. Resta salvato con il brano. La nota accanto al BPM ora va a capo invece di essere tagliata con "…".
 - I brani già aperti con le versioni precedenti vengono rianalizzati una volta (non quelli con il tempo corretto a mano; la scelta mostra/nascondi griglia resta).
 - Nuova suite di test `bpmoct`: 49 brani sintetici (5 ritmi, 60–286 BPM) → 45 giusti, 4 sbagliati ma con l'avviso giusto, 0 errori senza avviso.
 
@@ -53,9 +53,10 @@ Si tengono solo le ultime 1–2 versioni; il resto è nella cronologia git.
 
 ## 2. Limiti noti da migliorare
 - [ ] **BPM doppio/metà, casi rimasti** (dopo v2-11; i pulsanti ÷2 / ×2 sono nel menu "Griglia ▾"):
-  - brani veri in `cache/`: "Giant Steps" → 145,86 con "Forse è 291,7?"; "VIBEZ" → 154 (prima 77) con "Forse è 77?"; "ACT!VE" → 107,36 con "Forse è 53,7?" (107,36 non intero: da sentire);
+  - brani veri in `cache/`: "Giant Steps" → 145,86 con "Forse è 291,7?"; "VIBEZ" → 154 (prima 77) con "Forse è 77?"; "ACT!VE" → 107,36 senza avviso (107,36 non intero: da sentire); "Get on the Floor" → 124,79 senza avviso;
   - "Pulse" (Vincent David) è passato da 121 a 75,35: tempo non regolare, griglia nascosta, ma il BPM mostrato è cambiato. Da sentire quale è giusto;
   - un "half-time" a 100 BPM (sensazione di 50) dà un valore sbagliato senza avviso: caso raro, escluso dal test;
+  - per i tempi estremi (sopra 200, sotto 60) l'avviso compare solo se i colpi li confermano chiaramente (`ALT_EXTREME` in `js/bpm.js`): altrimenti ogni brano disco/funk con hi-hat in sedicesimi proporrebbe il doppio ("Get on the Floor": 249,6). Prezzo: cassa e rullante alternati a 200–290 BPM vengono letti a metà senza avviso (brano di prova di `synth.js`);
   - i brani in 6/8 o con terzine non sono provati.
 - [ ] **Brani con cambi di tempo** (es. "SICKO MODE") — *prossimo lavoro sulla griglia*: la griglia è unica per tutto il brano. Servirebbe una mappa del tempo a tratti (`steady` per blocchi esiste già in `js/bpm.js`).
 - [ ] **Beat 1** riconosciuto dalla cassa: verificato solo su brani sintetici.

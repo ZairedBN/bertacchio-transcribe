@@ -192,13 +192,14 @@
   }
 
   /* riga tempo */
-  .tempo { flex-wrap: nowrap; margin-top: 10px; }
+  .tempo { flex-wrap: wrap; margin-top: 10px; }
   .tempo .note-ic { color: var(--muted); font-size: 18px; line-height: 1; }
   .tempo input.bpm { width: 78px; }
   #tapBtn { min-width: 84px; font-variant-numeric: tabular-nums; }
   #tapBtn.on { border-color: var(--accent); color: var(--accent); font-weight: 600; }
   .tempo .bpm-alt { flex: none; white-space: nowrap; border-color: var(--accent); color: var(--accent); font-weight: 600; }
-  .tempo .det { flex: 1 1 0; min-width: 0; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* la nota va a capo (sotto, se accanto non c'è posto) invece di essere tagliata con "…" */
+  .tempo .det { flex: 1 1 180px; min-width: 0; font-size: 12px; line-height: 1.35; color: var(--muted); }
 
   /* barra dei comandi principali */
   .transport { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; }

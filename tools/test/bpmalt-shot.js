@@ -1,7 +1,7 @@
-// per lo screenshot: un brano nuovo a 240 con l'avviso visibile; controlla la larghezza della pagina
+// per lo screenshot: un brano nuovo a 160 con l'avviso visibile; controlla la larghezza della pagina
 (async () => {
   const $ = id => document.getElementById(id), wait = ms => new Promise(r => setTimeout(r, ms));
-  const f = bufToWav(makeSong(240, 20)), file = new File([f], 'foto' + innerWidth + '.wav', { type: 'audio/wav' });
+  const f = bufToWav(makeSong(160, 20)), file = new File([f], 'foto' + innerWidth + '.wav', { type: 'audio/wav' });
   const dt = new DataTransfer(); dt.items.add(file);
   $('file').files = dt.files; $('file').dispatchEvent(new Event('change'));
   await wait(300);
